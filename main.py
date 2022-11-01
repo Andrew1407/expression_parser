@@ -1,16 +1,22 @@
-from expression_parser import ExpressionParser
-import dataclasses
+from parser.expression_parser import ExpressionParser
+from analyzer.syntax_analyzer import SyntaxAnalyzer
 
-@dataclasses.dataclass
-class Sas:
-  a: int
-  b: int
+
+def parse_expression(expression):
+  ep = ExpressionParser(expression)
+  parsing_exceptions = ep.get_exceptions()
+  print('Parsed tokens:')
+  tokens = ep.get_tokens()
+  for t in tokens: print(t)
+  if parsing_exceptions:
+    print('\nParsing errors:')
+    for e in ep.get_exceptions(): print(e)
+    return
+  sa = SyntaxAnalyzer(tokens)
+  print('\nSyntax tree:')
+  print(sa.get_tree())
+
 
 if __name__ =='__main__':
-  expression = ' 3 * sin + (asdas45* s/ 8) -r.82 + 8 '
-  ep = ExpressionParser(expression)
-  print('Tokens:')
-  for t in ep.get_tokens(): print(t)
-  
-  print('\nErros:')
-  for e in ep.get_exceptions(): print(e)
+  expression = '33, 9'
+  parse_expression(expression)
