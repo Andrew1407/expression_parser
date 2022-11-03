@@ -1,6 +1,10 @@
 from enum import Enum
 from dataclasses import dataclass
 import re
+import json
+
+
+class ParsingExeprion(Exception): ...
 
 
 class Signature:
@@ -19,6 +23,7 @@ class SymbolTemplate:
 
 functions_args: dict[str, int] = dict(
   sin=1,
+  cos=1,
   rand=0,
   max=2,
   min=2,
@@ -43,13 +48,13 @@ class Operator(Enum):
     return value in set(e.value for e in (Operator.PLUS, Operator.MINUS))
 
 
-class TokenType(Enum):
-  PARENTHESIS = 1
-  OPERATOR = 2
-  FUNCTION = 3
-  VARIABLE = 4
-  CONSTANT = 5
-  DELIMITER = 6
+class TokenType(str, Enum):
+  PARENTHESIS = 'PARENTHESIS'
+  OPERATOR = 'OPERATOR'
+  FUNCTION = 'FUNCTION'
+  VARIABLE = 'VARIABLE'
+  CONSTANT = 'CONSTANT'
+  DELIMITER = 'DELIMITER'
 
 
 @dataclass
@@ -59,8 +64,12 @@ class Token:
   start: int
   end: int
 
+  def to_json(self) -> str:
+    return json.dumps(self.__dict__, indent=2)
+
+
   def __repr__(self) -> str:
-    return f'| type: {self.type.name} | value: \'{self.value}\' | start: {self.start} | end: {self.end} |'
+    return f'<type: {self.type.name}, value: "{self.value}", start: {self.start}, end: {self.end}>'
 
   
   @staticmethod

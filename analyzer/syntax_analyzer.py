@@ -1,7 +1,7 @@
 from typing import Iterable
 from types import NoneType
-from parser.tokens import Token, TokenType, Operator, Signature
-from .tree_nodes import *
+from parser.tokens import Token, TokenType, Operator, Signature, functions_args
+from analyzer.tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode, SyntaxAnalysisException
 
 
 class SyntaxAnalyzer:
@@ -9,7 +9,6 @@ class SyntaxAnalyzer:
     self.__position: int = 0
     self.__tokens: tuple[Token] = tuple(tokens)
     self.__tree: Node = None
-
     self.__analyze()
 
 
@@ -18,13 +17,23 @@ class SyntaxAnalyzer:
 
 
   def __analyze(self):
+    if not self.__tokens:
+      self.__tree = Node(value=None)
+      return
     self.__tree = self.__build_additive_node()
+    last_peeked = self.__get_current_token()
+    if last_peeked:
+      raise SyntaxAnalysisException(f'Unexpected token: "{last_peeked}"')
 
 
   def __get_current_token(self, next: bool=False) -> (Token | NoneType):
     token = self.__tokens[self.__position] if self.__position < len(self.__tokens) else None
     if next: self.__position += 1
     return token
+
+  
+  def __unpack(self, node: Node) -> Node:
+    return node.value if isinstance(node.value, Node) else node
 
 
   def __build_additive_node(self) -> Node:
@@ -34,7 +43,7 @@ class SyntaxAnalyzer:
       token = self.__get_current_token(next=True)
       left = BinaryOperatorNode(value=token, left=left, right=self.__build_multiplicative_node())
       token = self.__get_current_token()
-    return left
+    return self.__unpack(left)
 
 
   def __build_multiplicative_node(self) -> Node:
@@ -65,33 +74,40 @@ class SyntaxAnalyzer:
       if token_next and token_next.value == Signature.LEFT_PARENTHESIS:
         return self.__build_function_node(token)
       else:
-        return Node(value=token)
+        if token.type == TokenType.FUNCTION:
+          raise SyntaxAnalysisException(f'Declared function "{token.value}()" sould be called: "{token}"')
+        return self.__unpack(Node(value=token))
     
     if token and token.type == TokenType.CONSTANT:
       token = self.__get_current_token(next=True)
-      return Node(value=token)
+      return self.__unpack(Node(value=token))
 
     if token and token.value == Signature.LEFT_PARENTHESIS:
       lp = self.__get_current_token(next=True)
       expression = self.__build_additive_node()
       token = self.__get_current_token(next=True)
       if not (token and token.value == Signature.RIGHT_PARENTHESIS):
-        raise Exception(f'no right parenthesis found for: "{lp}"; expecting "{Signature.RIGHT_PARENTHESIS}"')
-      return Node(value=expression)
+        message = f'No right parenthesis found for: "{lp}"; expecting "{Signature.RIGHT_PARENTHESIS}"'
+        raise SyntaxAnalysisException(message)
+      return self.__unpack(Node(value=expression))
 
-    raise Exception(f'nonparsable token: {token}')
+    raise SyntaxAnalysisException(f'Nonparsable token: "{token}"')
 
 
   def __build_function_node(self, fn: Token) -> Node:
     token = self.__get_current_token(next=True)
-    args: list[Node] = list()
+    args: tuple[Node] = tuple()
     if not (token and token.value == Signature.LEFT_PARENTHESIS):
-      raise Exception(f'function call (left parenthesis) expected for: "{fn}"')
+      raise SyntaxAnalysisException(f'Function call (left parenthesis) expected for: "{fn}"')
+    if not (fn and fn.type == TokenType.FUNCTION):
+      raise SyntaxAnalysisException(f'No such function, cannot call: "{fn}"')
+    token = self.__get_current_token()
     if not (token and token.value == Signature.RIGHT_PARENTHESIS):
       args = self.__get_function_args()
     token = self.__get_current_token(next=True)
     if not (token and token.value == Signature.RIGHT_PARENTHESIS):
-      raise Exception(f'right parenthesis expected for: "{fn}"')
+      raise SyntaxAnalysisException(f'Right parenthesis expected for: "{fn}"')
+    self.__check_function_args_count(fn, args)
     return FunctionNode(value=fn, args=args)
 
 
@@ -107,4 +123,13 @@ class SyntaxAnalyzer:
       if not (token and token.type == TokenType.DELIMITER):
         break
       self.__get_current_token(next=True)
-    return args
+    return tuple(args)
+
+  
+  def __check_function_args_count(self, fn: TokenType, args: list[Node]):
+    expected = functions_args[fn.value]
+    actual = len(args)
+    if expected > actual:
+      raise SyntaxAnalysisException(f'Too few arguments (given: {actual}) for called funtion (expected: {expected}): "{fn}"')
+    if expected < actual:
+      raise SyntaxAnalysisException(f'Too many arguments (given: {actual}) for called funtion (expected: {expected}): "{fn}"')

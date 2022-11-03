@@ -1,5 +1,5 @@
 from parser.expression_parser import ExpressionParser
-from analyzer.syntax_analyzer import SyntaxAnalyzer
+from analyzer.syntax_analyzer import SyntaxAnalyzer, SyntaxAnalysisException
 
 
 def parse_expression(expression):
@@ -7,16 +7,32 @@ def parse_expression(expression):
   parsing_exceptions = ep.get_exceptions()
   print('Parsed tokens:')
   tokens = ep.get_tokens()
-  for t in tokens: print(t)
+  if tokens:
+    for t in tokens: print(t.to_json())
+  else:
+    print('Empty array')
   if parsing_exceptions:
     print('\nParsing errors:')
     for e in ep.get_exceptions(): print(e)
     return
-  sa = SyntaxAnalyzer(tokens)
-  print('\nSyntax tree:')
-  print(sa.get_tree())
+  try:
+    sa = SyntaxAnalyzer(tokens)
+    print('\nSyntax tree:')
+    print(sa.get_tree().to_json())
+  except SyntaxAnalysisException as ex:
+    print('\nSyntax errors:')
+    print(ex)
 
 
 if __name__ =='__main__':
-  expression = '33, 9'
-  parse_expression(expression)
+  while True:
+    try:
+      expression = input('> ')
+      if expression: parse_expression(expression)
+    except BaseException as ex:
+      if isinstance(ex, (KeyboardInterrupt, EOFError)):
+        print()
+        break
+      else:
+        raise ex
+
