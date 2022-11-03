@@ -12,8 +12,8 @@ class Node:
   value: Token
 
   def to_json(self):
-    entries = dict(type=self.__class__.__name__) | self.__dict__
-    return json.dumps(entries, default=lambda o: dict(type=o.__class__.__name__) | o.__dict__, indent=2)
+    parse = lambda o: dict(type=o.__class__.__name__) | o.__dict__
+    return json.dumps(parse(self), default=parse, indent=2)
 
 
 @dataclass

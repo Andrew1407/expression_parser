@@ -32,10 +32,6 @@ class SyntaxAnalyzer:
     return token
 
   
-  def __unpack(self, node: Node) -> Node:
-    return node.value if isinstance(node.value, Node) else node
-
-
   def __build_additive_node(self) -> Node:
     left = self.__build_multiplicative_node()
     token = self.__get_current_token()
@@ -43,7 +39,7 @@ class SyntaxAnalyzer:
       token = self.__get_current_token(next=True)
       left = BinaryOperatorNode(value=token, left=left, right=self.__build_multiplicative_node())
       token = self.__get_current_token()
-    return self.__unpack(left)
+    return left
 
 
   def __build_multiplicative_node(self) -> Node:
@@ -76,11 +72,11 @@ class SyntaxAnalyzer:
       else:
         if token.type == TokenType.FUNCTION:
           raise SyntaxAnalysisException(f'Declared function "{token.value}()" sould be called: "{token}"')
-        return self.__unpack(Node(value=token))
+        return Node(value=token)
     
     if token and token.type == TokenType.CONSTANT:
       token = self.__get_current_token(next=True)
-      return self.__unpack(Node(value=token))
+      return Node(value=token)
 
     if token and token.value == Signature.LEFT_PARENTHESIS:
       lp = self.__get_current_token(next=True)
@@ -89,7 +85,7 @@ class SyntaxAnalyzer:
       if not (token and token.value == Signature.RIGHT_PARENTHESIS):
         message = f'No right parenthesis found for: "{lp}"; expecting "{Signature.RIGHT_PARENTHESIS}"'
         raise SyntaxAnalysisException(message)
-      return self.__unpack(Node(value=expression))
+      return expression
 
     raise SyntaxAnalysisException(f'Nonparsable token: "{token}"')
 

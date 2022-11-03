@@ -30,9 +30,10 @@ if __name__ =='__main__':
       expression = input('> ')
       if expression: parse_expression(expression)
     except BaseException as ex:
-      if isinstance(ex, (KeyboardInterrupt, EOFError)):
-        print()
-        break
-      else:
-        raise ex
+      match ex:
+        case KeyboardInterrupt() | EOFError():
+          print()
+          break
+        case _:
+          raise ex
 
