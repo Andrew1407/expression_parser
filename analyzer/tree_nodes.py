@@ -4,9 +4,6 @@ from parser.tokens import Token
 import json
 
 
-class SyntaxAnalysisException(Exception): ...
-
-
 @dataclass
 class Node:
   value: Token

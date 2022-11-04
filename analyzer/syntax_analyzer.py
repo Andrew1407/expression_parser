@@ -1,7 +1,13 @@
 from typing import Iterable
 from types import NoneType
 from parser.tokens import Token, TokenType, Operator, Signature, functions_args
-from analyzer.tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode, SyntaxAnalysisException
+from analyzer.tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode
+
+
+class SyntaxAnalysisException(Exception):
+  def __init__(self, message: str, token: Token):
+    super().__init__(message.format(token=token))
+    self.token: Token = token
 
 
 class SyntaxAnalyzer:
@@ -23,7 +29,7 @@ class SyntaxAnalyzer:
     self.__tree = self.__build_additive_node()
     last_peeked = self.__get_current_token()
     if last_peeked:
-      raise SyntaxAnalysisException(f'Unexpected token: "{last_peeked}"')
+      raise SyntaxAnalysisException('Unexpected token: "{token}"', last_peeked)
 
 
   def __get_current_token(self, next: bool=False) -> (Token | NoneType):
@@ -71,7 +77,8 @@ class SyntaxAnalyzer:
         return self.__build_function_node(token)
       else:
         if token.type == TokenType.FUNCTION:
-          raise SyntaxAnalysisException(f'Declared function "{token.value}()" sould be called: "{token}"')
+          message = f'Declared function "{token.value}()" sould be called: '
+          raise SyntaxAnalysisException(message + '"{token}"', token)
         return Node(value=token)
     
     if token and token.type == TokenType.CONSTANT:
@@ -83,26 +90,27 @@ class SyntaxAnalyzer:
       expression = self.__build_additive_node()
       token = self.__get_current_token(next=True)
       if not (token and token.value == Signature.RIGHT_PARENTHESIS):
-        message = f'No right parenthesis found for: "{lp}"; expecting "{Signature.RIGHT_PARENTHESIS}"'
-        raise SyntaxAnalysisException(message)
+        template = 'No right parenthesis found for: "{token}"; '
+        message_end = f'expecting "{Signature.RIGHT_PARENTHESIS}"'
+        raise SyntaxAnalysisException(template + message_end, lp)
       return expression
 
-    raise SyntaxAnalysisException(f'Nonparsable token: "{token}"')
+    raise SyntaxAnalysisException('Nonparsable token: "{token}"', token)
 
 
   def __build_function_node(self, fn: Token) -> Node:
     token = self.__get_current_token(next=True)
     args: tuple[Node] = tuple()
     if not (token and token.value == Signature.LEFT_PARENTHESIS):
-      raise SyntaxAnalysisException(f'Function call (left parenthesis) expected for: "{fn}"')
+      raise SyntaxAnalysisException('Function call (left parenthesis) expected for: "{token}"', fn)
     if not (fn and fn.type == TokenType.FUNCTION):
-      raise SyntaxAnalysisException(f'No such function, cannot call: "{fn}"')
+      raise SyntaxAnalysisException('No such function, cannot call: "{token}"', fn)
     token = self.__get_current_token()
     if not (token and token.value == Signature.RIGHT_PARENTHESIS):
       args = self.__get_function_args()
     token = self.__get_current_token(next=True)
     if not (token and token.value == Signature.RIGHT_PARENTHESIS):
-      raise SyntaxAnalysisException(f'Right parenthesis expected for: "{fn}"')
+      raise SyntaxAnalysisException('Right parenthesis expected for: "{token}"', fn)
     self.__check_function_args_count(fn, args)
     return FunctionNode(value=fn, args=args)
 
@@ -125,7 +133,7 @@ class SyntaxAnalyzer:
   def __check_function_args_count(self, fn: TokenType, args: list[Node]):
     expected = functions_args[fn.value]
     actual = len(args)
-    if expected > actual:
-      raise SyntaxAnalysisException(f'Too few arguments (given: {actual}) for called funtion (expected: {expected}): "{fn}"')
-    if expected < actual:
-      raise SyntaxAnalysisException(f'Too many arguments (given: {actual}) for called funtion (expected: {expected}): "{fn}"')
+    if expected == actual: return
+    args_count = 'few' if expected > actual else 'many'
+    message_start = f'Too {args_count} arguments (given: {actual}) for called funtion (expected: {expected}): '
+    raise SyntaxAnalysisException(message_start + '"{token}"', fn)

@@ -1,4 +1,11 @@
-from .tokens import Token, Operator, TokenType, Signature, SymbolTemplate, functions_args, ParsingExeprion
+from .tokens import Token, Operator, TokenType, Signature, SymbolTemplate, functions_args
+
+
+class ParsingExeprion(Exception):
+  def __init__(self, message: str, symbol: str, position: int):
+    super().__init__(message.format(symbol=symbol, position=position))
+    self.symbol: str = symbol
+    self.position: int = position
 
 
 class ExpressionParser:
@@ -40,7 +47,7 @@ class ExpressionParser:
         case Signature.DELIMITER:
           self.__add_delimiter()
         case _ as unknown:
-          self.__add_exeption(f'Unknown symbol "{unknown}"')
+          self.__add_exeption('Unknown symbol "{symbol}"', unknown)
 
       self.__position += 1
 
@@ -49,25 +56,27 @@ class ExpressionParser:
     return self.__tokens[-1] if len(self.__tokens) else None
 
   
-  def __add_exeption(self, message: str, position: int = -1):
+  def __add_exeption(self, message: str, symbol: str, position: int = -1):
     pos = self.__position if position < 0 else position
-    ex = ParsingExeprion(f'{message} at position {pos}')
-    self.__exceptions.append(ex)
+    message_full = message + ' at position {position}'
+    if not tuple(filter(lambda e: e.position == pos, self.__exceptions)):
+      ex = ParsingExeprion(message_full, symbol, pos)
+      self.__exceptions.append(ex)
 
 
   def __add_operator_token(self, operator: str):
     token = Token.of(operator, TokenType.OPERATOR, self.__position)
     match self.__get_last_token():
       case None if not Operator.isunary(operator):
-        self.__add_exeption(f'Invalid symbol operator "{operator}"')
+        self.__add_exeption('Invalid symbol operator "{symbol}"', operator)
       case Token() as t if t.type == TokenType.CONSTANT and t.value.strip() == Signature.FLOAT_POINT:
-        self.__add_exeption(f'Invalid symbol "{operator}"')
+        self.__add_exeption('Invalid symbol "{symbol}"', operator)
       case Token(type=TokenType.DELIMITER):
-        self.__add_exeption(f'Invalid symbol "{operator}"')
+        self.__add_exeption('Invalid symbol "{symbol}"', operator)
       case Token() as t if t.value == '(' and not Operator.isunary(token.value):
-        self.__add_exeption(f'Invalid symbol operator "{operator}"')
+        self.__add_exeption('Invalid symbol operator "{symbol}"', operator)
       case Token(type=TokenType.OPERATOR) if not Operator.isunary(token.value):
-        self.__add_exeption(f'Invalid symbol operator "{operator}"')
+        self.__add_exeption('Invalid symbol operator "{symbol}"', operator)
     self.__tokens.append(token)
 
 
@@ -92,7 +101,7 @@ class ExpressionParser:
         new_float = Token.of(Signature.FLOAT_POINT, TokenType.CONSTANT, self.__position)
         self.__tokens.append(new_float)
       case Token(type=TokenType.VARIABLE) as t:
-        self.__add_exeption(f'Uhexpected symbol "{Signature.FLOAT_POINT}"')
+        self.__add_exeption('Unexpected symbol "{symbol}"', Signature.FLOAT_POINT)
         t.value += Signature.FLOAT_POINT
         t.end = self.__position
       case Token() as t if t.type != TokenType.CONSTANT:
@@ -100,7 +109,7 @@ class ExpressionParser:
         new_float = Token.of(Signature.FLOAT_POINT, TokenType.CONSTANT, self.__position)
         self.__tokens.append(new_float)
       case Token(type, value) as t if type == TokenType.CONSTANT and Signature.FLOAT_POINT in value:
-        self.__add_exeption(f'Invalid symbol "{Signature.FLOAT_POINT}"')
+        self.__add_exeption('Invalid symbol "{symbol}"', Signature.FLOAT_POINT)
         t.value += Signature.FLOAT_POINT
         t.end = self.__position
       case Token() as t:
@@ -120,7 +129,7 @@ class ExpressionParser:
         t.end = self.__position
       case Token(type=TokenType.CONSTANT) as t:
         if SymbolTemplate.numbers_range.match(t.value):
-          self.__add_exeption(f'Invalid symbol "{ch}"')
+          self.__add_exeption('Invalid symbol "{symbol}"', ch)
         self.__check_space_entries(ch)
         t.value += ch
         t.end = self.__position
@@ -137,17 +146,17 @@ class ExpressionParser:
     match parenthesis:
       case Signature.LEFT_PARENTHESIS:
         if token and (token.type == TokenType.CONSTANT or token.value == Signature.RIGHT_PARENTHESIS):
-          self.__add_exeption(f'Unexpected left parenthesis')
+          self.__add_exeption('Unexpected left parenthesis "{symbol}"', Signature.LEFT_PARENTHESIS)
         self.__tokens.append(generated)
       case Signature.RIGHT_PARENTHESIS:
         if not token:
-          self.__add_exeption(f'Unexpected right parenthesis')
+          self.__add_exeption('Unexpected right parenthesis', Signature.RIGHT_PARENTHESIS)
         elif token.type == TokenType.OPERATOR:
-          self.__add_exeption(f'Unexpected symbol "{parenthesis}"')
+          self.__add_exeption('Unexpected symbol "{symbol}"', parenthesis)
         elif token.type == TokenType.CONSTANT and token.value.strip() == Signature.FLOAT_POINT:
-          self.__add_exeption(f'Invalid symbol "{parenthesis}"')
+          self.__add_exeption('Invalid symbol "{symbol}"', parenthesis)
         elif token.type == TokenType.DELIMITER:
-          self.__add_exeption(f'Unexpected symbol "{parenthesis}"')
+          self.__add_exeption('Unexpected symbol "{symbol}"', parenthesis)
         self.__tokens.append(generated)
 
 
@@ -155,11 +164,11 @@ class ExpressionParser:
     generated = Token.of(Signature.DELIMITER, TokenType.DELIMITER, self.__position)
     match self.__get_last_token():
       case None:
-        self.__add_exeption(f'Unexpected delimiter symbol "{Signature.DELIMITER}"')
+        self.__add_exeption('Unexpected delimiter symbol "{symbol}"', Signature.DELIMITER)
       case Token() as t if t.type == TokenType.OPERATOR or t.value.strip() in (Signature.FLOAT_POINT, Signature.LEFT_PARENTHESIS):
-        self.__add_exeption(f'Unexpected delimiter symbol "{Signature.DELIMITER}"')
+        self.__add_exeption('Unexpected delimiter symbol "{symbol}"', Signature.DELIMITER)
       case Token(type=TokenType.DELIMITER):
-        self.__add_exeption(f'Unexpected delimiter symbol "{Signature.DELIMITER}"')
+        self.__add_exeption('Unexpected delimiter symbol "{symbol}"', Signature.DELIMITER)
     self.__tokens.append(generated)
 
 
@@ -172,31 +181,31 @@ class ExpressionParser:
   def __check_space_entries(self, value: str):
     previous = self.__expression[self.__position - 1]
     if SymbolTemplate.space.match(previous):
-      self.__add_exeption(f'Unexpected symbol "{value}"')
+      self.__add_exeption('Unexpected symbol "{symbol}"', value)
 
 
   def __check_after_lpar(self, token: Token, value: str):
     if token.type == TokenType.PARENTHESIS and token.value == Signature.RIGHT_PARENTHESIS:
-      self.__add_exeption(f'Unexpected symbol "{value}"')
+      self.__add_exeption('Unexpected symbol "{symbol}"', value)
 
 
   def __check_last_token(self):
     match self.__get_last_token():
       case Token() as t if t.type == TokenType.CONSTANT and t.value.strip() == Signature.FLOAT_POINT:
         position = self.__expression.rindex(Signature.FLOAT_POINT)
-        self.__add_exeption(f'Invalid symbol "{t.value}"', position)
+        self.__add_exeption('Invalid symbol "{symbol}"', t.value, position)
       case Token(type=TokenType.DELIMITER) as t:
         if len(self.__tokens) > 1:
           position = self.__expression.rindex(Signature.DELIMITER)
-          self.__add_exeption(f'Invalid symbol "{t.value}"', position)
+          self.__add_exeption('Invalid symbol "{symbol}"', t.value, position)
       case Token(type=TokenType.PARENTHESIS, value=Signature.LEFT_PARENTHESIS) as t:
         position = self.__expression.rindex(t.value)
-        self.__add_exeption(f'Unexpected left parenthesis "{t.value}"', position)
+        self.__add_exeption('Unexpected left parenthesis "{symbol}"', t.value, position)
       case Token() as t if t.type == TokenType.OPERATOR:
         unary = Operator.isunary(t.value)
         if unary or len(self.__tokens) > 1 and not unary:
           position = self.__expression.rindex(t.value)
-          self.__add_exeption(f'Unexpected symbol "{t.value}"', position)
+          self.__add_exeption('Unexpected symbol "{symbol}"', t.value, position)
 
 
   def __define_functions(self):

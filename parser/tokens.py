@@ -4,9 +4,6 @@ import re
 import json
 
 
-class ParsingExeprion(Exception): ...
-
-
 class Signature:
   DELIMITER: str = ','
   FLOAT_POINT: str = '.'
@@ -16,7 +13,7 @@ class Signature:
 
 class SymbolTemplate:
   number: re.Pattern = re.compile(r'\d')
-  symbol: re.Pattern = re.compile(r'[A-Za-z|_]')
+  symbol: re.Pattern = re.compile(r'[A-Za-z_]')
   space: re.Pattern = re.compile(r'\s')
   numbers_range: re.Pattern = re.compile(r'^[\d\.]+$')
 

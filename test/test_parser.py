@@ -311,10 +311,10 @@ class TestExpressionParser(unittest.TestCase):
     )
 
     self.assertTupleEqual(expected_lp_tokens, lp_parser.get_tokens())
-    self.assertTupleEqual((('Unexpected left parenthesis at position 1'),), tuple(str(ex) for ex in lp_parser.get_exceptions()))
+    self.assertTupleEqual((('Unexpected left parenthesis "(" at position 1'),), tuple(str(ex) for ex in lp_parser.get_exceptions()))
 
     self.assertTupleEqual(expected_wrong_order_tokens, wrong_order_parser.get_tokens())
-    self.assertTupleEqual((('Unexpected left parenthesis at position 3'),), tuple(str(ex) for ex in wrong_order_parser.get_exceptions()))
+    self.assertTupleEqual((('Unexpected left parenthesis "(" at position 3'),), tuple(str(ex) for ex in wrong_order_parser.get_exceptions()))
 
 
   def test_invalid_parenthesis_with_variables_order(self):
@@ -338,7 +338,7 @@ class TestExpressionParser(unittest.TestCase):
     self.assertTupleEqual((('Unexpected symbol "b" at position 3'),), tuple(str(ex) for ex in lp_parser.get_exceptions()))
 
     self.assertTupleEqual(expected_wrong_order_tokens, wrong_order_parser.get_tokens())
-    self.assertTupleEqual((('Unexpected left parenthesis at position 3'),), tuple(str(ex) for ex in wrong_order_parser.get_exceptions()))
+    self.assertTupleEqual((('Unexpected left parenthesis "(" at position 3'),), tuple(str(ex) for ex in wrong_order_parser.get_exceptions()))
 
 
   def test_point_in_variable_exception(self):
@@ -347,7 +347,7 @@ class TestExpressionParser(unittest.TestCase):
       Token(value='vari.able', type=TokenType.VARIABLE, start=0, end=8),
     )
     expected_exceptions = (
-      'Uhexpected symbol "." at position 4',
+      'Unexpected symbol "." at position 4',
     )
 
     self.assertTupleEqual(expected_tokens, parser.get_tokens())
@@ -480,7 +480,7 @@ class TestExpressionParser(unittest.TestCase):
     self.assertTupleEqual(('Unexpected delimiter symbol "," at position 1',), tuple(str(ex) for ex in parser_od.get_exceptions()))
 
     self.assertTupleEqual(expected_tokens_do, parser_do.get_tokens())
-    self.assertTupleEqual(('Invalid symbol "*" at position 2', 'Unexpected symbol "*" at position 2',), tuple(str(ex) for ex in parser_do.get_exceptions()))
+    self.assertTupleEqual(('Invalid symbol "*" at position 2',), tuple(str(ex) for ex in parser_do.get_exceptions()))
 
     self.assertTupleEqual(expected_tokens_dd, parser_dd.get_tokens())
     self.assertTupleEqual(('Unexpected delimiter symbol "," at position 2',), tuple(str(ex) for ex in parser_dd.get_exceptions()))
@@ -542,3 +542,24 @@ class TestExpressionParser(unittest.TestCase):
 
     self.assertTupleEqual(expected_tokens_ue2, parser_ue2.get_tokens())
     self.assertTupleEqual(tuple(), parser_ue2.get_exceptions())
+
+  
+  def test_multiple_exceptions_expression(self):
+    parser = ExpressionParser( 's . 2 + ) d /')
+    expected_tokens = (
+      Token(value='s . 2', type=TokenType.VARIABLE, start=0, end=4),
+      Token.of(Operator.PLUS.value, TokenType.OPERATOR, 6),
+      Token.of(Signature.RIGHT_PARENTHESIS, TokenType.PARENTHESIS, 8),
+      Token.of('d', TokenType.VARIABLE, 10),
+      Token.of(Operator.DIVIDE.value, TokenType.OPERATOR, 12),
+    )
+    expected_exceptions = (
+      'Unexpected symbol "." at position 2',
+      'Unexpected symbol "2" at position 4',
+      'Unexpected symbol ")" at position 8',
+      'Unexpected symbol "d" at position 10',
+      'Unexpected symbol "/" at position 12',
+    )
+
+    self.assertTupleEqual(expected_tokens, parser.get_tokens())
+    self.assertTupleEqual(expected_exceptions, tuple(str(ex) for ex in parser.get_exceptions()))
