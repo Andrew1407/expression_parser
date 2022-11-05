@@ -25,6 +25,6 @@ python main.py
 python -m unittest
 ```
 
-The main (entry) script uses runs console app expecting an expression input. It uses **[ExpressionParser](./parser/expression_parser.py)** to parse raw input (string) returning tokens|errors list, and **[SyntaxAnalysisException](./analyzer/syntax_analyzer.py)** to build a syntax tree using parsed tokens (if no parsing exceptions occured). In case of any syntax error it raises a SyntaxAnalysisException reffering to error token.
+The main (entry) script runs a console app expecting an expression input. It uses **[ExpressionParser](./parser/expression_parser.py)** to parse a raw input (string) returning token/error list, and **[SyntaxAnalysisException](./analyzer/syntax_analyzer.py)** to build a syntax tree using parsed tokens (if no parsing exceptions occured). In case of any syntax error it raises a SyntaxAnalysisException reffering to error token.
 <br />
 [Unit tests](./test) cover different behavior cases using the mentioned modules. Many valid and invalid test cases can be found there.
