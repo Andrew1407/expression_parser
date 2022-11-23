@@ -1,6 +1,6 @@
 from parser.expression_parser import ExpressionParser, ParsingExeprion
 from analyzer.syntax_analyzer import SyntaxAnalyzer, SyntaxAnalysisException
-from parallel_tree.builder import ParallelTreeBuilder
+from parallel_tree.builder import build_parallel_tree
 
 
 def exception_handler(fn):
@@ -34,7 +34,7 @@ def parse_expression(expression):
   sa = SyntaxAnalyzer(tokens)
   syntax_tree = sa.get_tree()
   print('\nSyntax tree:\n', syntax_tree.to_json())
-  parallel_tree = ParallelTreeBuilder(syntax_tree).build()
+  parallel_tree = build_parallel_tree(syntax_tree)
   print('\nParallel tree:\n', parallel_tree.to_json())
 
 

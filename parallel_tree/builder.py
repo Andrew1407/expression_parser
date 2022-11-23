@@ -1,196 +1,89 @@
-from typing import Literal, Callable
+from typing import Callable
 from types import NoneType
 from copy import deepcopy
-from parser.tokens import Token, TokenType, Operator, Signature
+from parser.tokens import Token, TokenType, Operator
 from analyzer.tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode
+from . import optimizer_tools
 
 
-class ParallelTreeBuilder:
-  def __init__(self, tree: Node):
-    self.__tree_raw: Node = tree
-    self.__tree: Node = None
-
-  
-  def build(self) -> Node:
-    self.__tree = deepcopy(self.__tree_raw)
-    self.__convert_operations(self.__tree)
-    self.__minimize_depth(self.__tree)
-    return self.__tree
-
-  
-  def __convert_operations(self, node: Node):
-    match node:
-      case BinaryOperatorNode(value=(Token(value=Operator.MINUS.value))) as minus:
-        self.__convert_operations(minus.left)
-        self.__convert_operations(minus.right)
-        right_wrapper = deepcopy(minus.value)
-        right_wrapper.value = Operator.MINUS.value
-        minus.value = Operator.PLUS.value
-        minus.right = UnaryOperatorNode(value=right_wrapper, expression=minus.right)
-      case BinaryOperatorNode(value=(Token(value=Operator.DIVIDE.value))) as division:
-        self.__convert_operations(division.right)
-        self.__convert_operations(division.left)
-        one_constant = Token.of('1', TokenType.CONSTANT, division.value.start)
-        division_by_one = deepcopy(division.value)
-        division.value = Operator.MULTIPLY.value
-        division.right = BinaryOperatorNode(value=division_by_one, left=one_constant, right=division.right)
-      case UnaryOperatorNode() as unary:
-        self.__convert_operations(unary.expression)
-      case FunctionNode() as function:
-        for expression in function.args:
-          self.__convert_operations(expression)
+def build_parallel_tree(node: Node, convert_to_optimized: bool = True) -> Node:
+  tree = deepcopy(node)
+  optimizer_tools.convert_to_primitive(tree)
+  tree, unary = optimizer_tools.get_unary_min_depth(tree)
+  if unary:
+    unary.expression = tree
+    tree = unary
+  optimizer_tools.reduce_unaries(tree)
+  tree = optimizer_tools.open_brackets(tree)
+  minimize_depth(tree)
+  if convert_to_optimized:
+    optimizer_tools.convert_to_optimized(tree)
+  return tree
 
 
-  def __minimize_depth(self, node: Node):
-    match node:
-      case UnaryOperatorNode() as unary:
-        self.__minimize_depth(unary.expression)
-      case BinaryOperatorNode(value=(Token(value=Operator.PLUS.value))) as binary:
-        self.__balanse_plus(binary)
-      case BinaryOperatorNode(value=(Token(value=Operator.MULTIPLY.value))) as binary:
-        self.__balanse_multiplication(binary)
+def minimize_depth(node: Node):
+  match node:
+    case UnaryOperatorNode() as unary:
+      minimize_depth(unary.expression)
+    case BinaryOperatorNode() as binary if binary.value.value in (Operator.PLUS.value, Operator.MULTIPLY.value):
+      operator = binary.value.value
+      depth_builder = lambda node, depth: get_path_depth(node, depth, operator)
+      balanse_operator(operator, binary, depth_builder)
+    case BinaryOperatorNode(value=(Token(value=Operator.POWER.value))) as power:
+      minimize_depth(power.left)
+      minimize_depth(power.right)
+    case FunctionNode() as function:
+      for expression in function.args:
+        minimize_depth(expression)
 
 
-  def __balanse_plus(self, node: BinaryOperatorNode):
-    max_path, min_path = self.__get_path_leaves(node, self.__get_depth_path_plus)
-    if len(max_path) != len(min_path):
-      replaceable = max_path[-1]
-      prev: BinaryOperatorNode = max_path[-2]
-      i = -2
-      while -1 <= i < -len(max_path) and isinstance(prev, UnaryOperatorNode):
-        replaceable = max_path[-i]
-        prev = max_path[-i - 1]
-        i -= 1
-      leaf: Literal['left', 'right'] = 'left' if prev.left is replaceable else 'right'
-      leaf_left: Literal['left', 'right'] = 'left' if leaf == 'right' else 'right'
-      while i <= -len(max_path):
-        if isinstance(max_path[i], UnaryOperatorNode):
-          i -= 1
-        else:
-          break
-      leaf_to_place: Literal['left', 'right'] = 'left' if max_path[i - 1].left is max_path[i]  else 'right'
-      setattr(max_path[i - 1], leaf_to_place, getattr(prev, leaf_left))
+def balanse_operator(operator: str, node: BinaryOperatorNode, depth_builder: Callable[[Node, list[Node]], NoneType]):
+  max_path, min_path = get_leaves_path(node, depth_builder)
+  max_len = len(max_path)
+  min_len = len(min_path)
+  if max_len != min_len and max_len > 2:
+    joinable, prev, replaceable = tuple(max_path[-3:])
+    leaf_left = 'left' if prev.right is replaceable else 'right'
+    leaf_to_place = 'left' if joinable.left is prev  else 'right'
+    setattr(joinable, leaf_to_place, getattr(prev, leaf_left))
 
-      groupable = min_path[-1]
-      prev: BinaryOperatorNode = min_path[-2]
-      i = -2
-      while -1 <= i < -len(min_path) and isinstance(prev, UnaryOperatorNode):
-        groupable = min_path[-i]
-        prev = min_path[-i - 1]
-        i -= 1
-      leaf_to_add: Literal['left', 'right'] = 'left' if prev.left is groupable else 'right'
-      grouped = BinaryOperatorNode(
-        value=Token.of(Operator.PLUS.value, TokenType.OPERATOR, prev.value.start),
-        left=replaceable,
-        right=groupable,
-      )
-      setattr(prev, leaf_to_add, grouped)
+    prev, groupable = tuple(min_path[-2:])
+    leaf_to_add = 'left' if prev.left is groupable else 'right'
+    grouped = BinaryOperatorNode(
+      value=Token.of(operator, TokenType.OPERATOR, groupable.value.start),
+      left=replaceable,
+      right=groupable,
+    )
+    setattr(prev, leaf_to_add, grouped)
 
-    self.__minimize_depth(node.left)
-    self.__minimize_depth(node.right)
+  minimize_depth(node.left)
+  minimize_depth(node.right)
 
 
-  def __get_depth_path_plus(self, node: Node, depth: list[Node]):
-    match node:
-      case UnaryOperatorNode() as unary:
-        depth.append(unary)
-        self.__get_depth_path_plus(unary.expression, depth)
-      case BinaryOperatorNode() as operator if operator.value.value != Operator.PLUS.value:
-        depth.append(operator)
-      case BinaryOperatorNode(value=(Token(value=Operator.PLUS.value))) as binary:
-        left_plus = binary.left.value.value == Operator.PLUS.value
-        right_plus = binary.right.value.value == Operator.PLUS.value
-        if left_plus and right_plus:
-          max_path, _ = self.__get_path_leaves(binary, self.__get_depth_path_plus)
-          depth.extend(max_path)
-          return
-        depth.append(binary)
-        if left_plus and not right_plus:
-          self.__get_depth_path_plus(binary.right, depth)
-        if right_plus and not left_plus:
-          self.__get_depth_path_plus(binary.left, depth)
-      case FunctionNode() as function:
-        depth.append(function)
-      case Node() as node:
-        depth.append(node)
-
-  
-  def __balanse_multiplication(self, node: BinaryOperatorNode):
-    max_path, min_path = self.__get_path_leaves(node, self.__get_depth_path_multiply)
-    if len(max_path) != len(min_path):
-      replaceable = max_path[-1]
-      prev: BinaryOperatorNode = max_path[-2]
-      i = -2
-      while -1 <= i < -len(max_path) and isinstance(prev, UnaryOperatorNode):
-        replaceable = max_path[-i]
-        prev = max_path[-i - 1]
-        i -= 1
-      leaf: Literal['left', 'right'] = 'left' if prev.left is replaceable else 'right'
-      leaf_left: Literal['left', 'right'] = 'left' if leaf == 'right' else 'right'
-      while i <= -len(max_path):
-        if isinstance(max_path[i], UnaryOperatorNode):
-          i -= 1
-        else:
-          break
-      leaf_to_place: Literal['left', 'right'] = 'left' if max_path[i - 1].left is max_path[i]  else 'right'
-      setattr(max_path[i - 1], leaf_to_place, getattr(prev, leaf_left))
-
-      groupable = min_path[-1]
-      prev: BinaryOperatorNode = min_path[-2]
-      i = -2
-      while -1 <= i < -len(min_path) and isinstance(prev, UnaryOperatorNode):
-        groupable = min_path[-i]
-        prev = min_path[-i - 1]
-        i -= 1
-      leaf_to_add: Literal['left', 'right'] = 'left' if prev.left is groupable else 'right'
-      grouped = BinaryOperatorNode(
-        value=Token.of(Operator.MULTIPLY.value, TokenType.OPERATOR, prev.value.start),
-        left=replaceable,
-        right=groupable,
-      )
-      setattr(prev, leaf_to_add, grouped)
-
-    self.__minimize_depth(node.left)
-    self.__minimize_depth(node.right)
+def get_path_depth(node: Node, depth: list[Node], operator: str):
+  is_binary = isinstance(node, BinaryOperatorNode)
+  if not is_binary or is_binary and node.value.value != operator:
+    depth.append(node)
+    return
+  binary: BinaryOperatorNode = node
+  left_plus = binary.left.value.value == operator
+  right_plus = binary.right.value.value == operator
+  if left_plus and right_plus:
+    depth_warapper = lambda node, depth: get_path_depth(node, depth, operator)
+    max_path, _ = get_leaves_path(binary, depth_warapper)
+    depth.extend(max_path)
+    return
+  depth.append(binary)
+  if left_plus and not right_plus:
+    get_path_depth(binary.right, depth, operator)
+  if right_plus and not left_plus:
+    get_path_depth(binary.left, depth, operator)
 
 
-  def __get_depth_path_multiply(self, node: Node, depth: list[Node]):
-    match node:
-      case UnaryOperatorNode() as unary:
-        depth.append(unary)
-        self.__get_depth_path_multiply(unary.expression, depth)
-      case BinaryOperatorNode() as operator if operator.value.value != Operator.MULTIPLY.value:
-        depth.append(operator)
-      case BinaryOperatorNode(value=(Token(value=Operator.MULTIPLY.value))) as binary:
-        left_plus = binary.left.value.value == Operator.MULTIPLY.value
-        right_plus = binary.right.value.value == Operator.MULTIPLY.value
-        if left_plus and right_plus:
-          max_path, _ = self.__get_path_leaves(binary, self.__get_depth_path_multiply)
-          depth.extend(max_path)
-          return
-        depth.append(binary)
-        if left_plus and not right_plus:
-          self.__get_depth_path_multiply(binary.right, depth)
-        if right_plus and not left_plus:
-          self.__get_depth_path_multiply(binary.left, depth)
-      case FunctionNode() as function:
-        depth.append(function)
-      case Node() as node:
-        depth.append(node)
-
-
-  def __get_path_leaves(self, node: BinaryOperatorNode, depth_builder: Callable[[Node, list[Node]], NoneType]) -> tuple[list[Node], list[Node]]:
-    left_depth: list[Node] = [node]
-    right_depth: list[Node] = [node]
-    depth_builder(node.left, left_depth)
-    depth_builder(node.right, right_depth)
-    left_len = len(left_depth)
-    right_len = len(right_depth)
-    if self.__last_unary(left_depth): left_len -= 1
-    if self.__last_unary(right_depth): right_len -= 1
-    left_max = left_len > right_len
-    return (left_depth, right_depth) if left_max else (right_depth, left_depth)
-
-
-  def __last_unary(self, depth: list[Node]) -> bool:
-    return len(depth) > 1 and isinstance(depth[-2], UnaryOperatorNode)
+def get_leaves_path(node: BinaryOperatorNode, depth_builder: Callable[[Node, list[Node]], NoneType]) -> tuple[list[Node], list[Node]]:
+  left_depth: list[Node] = [node]
+  right_depth: list[Node] = [node]
+  depth_builder(node.left, left_depth)
+  depth_builder(node.right, right_depth)
+  left_max = len(left_depth) > len(right_depth)
+  return (left_depth, right_depth) if left_max else (right_depth, left_depth)
