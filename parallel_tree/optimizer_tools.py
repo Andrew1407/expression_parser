@@ -134,10 +134,8 @@ def apply_minus(node: Node) -> Node:
     case BinaryOperatorNode() if node.value.value in (Operator.MULTIPLY.value, Operator.DIVIDE.value):
       node.left = open_brackets(node.left)
       node.right = open_brackets(node.right)
-      if __vals_eq(node.left, '1'):
-        node.left = apply_minus(node.left)
-      else:
-        node.right = apply_minus(node.right)
+      leaf_minus = 'right' if __vals_eq(node.left, '1') else 'left'
+      setattr(node, leaf_minus, apply_minus(getattr(node, leaf_minus)))
     case Node():
       node = UnaryOperatorNode(
         value=Token.of(Operator.MINUS.value, TokenType.OPERATOR, node.value.start),
