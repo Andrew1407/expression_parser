@@ -1,7 +1,7 @@
 from typing import Iterable
 from types import NoneType
 from parser.tokens import Token, TokenType, Operator, Signature, functions_args
-from analyzer.tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode
+from .tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode
 
 
 class SyntaxAnalysisException(Exception):

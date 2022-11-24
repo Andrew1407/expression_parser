@@ -1,3 +1,0 @@
-igraph==0.10.2
-python-igraph==0.10.2
-texttable==1.6.7

@@ -8,6 +8,7 @@ from . import optimizer_tools
 
 def build_parallel_tree(node: Node, convert_to_optimized: bool = True) -> Node:
   tree = deepcopy(node)
+  tree = optimizer_tools.minimize_redundant_nodes(tree)
   optimizer_tools.convert_to_primitive(tree)
   tree, unary = optimizer_tools.get_unary_min_depth(tree)
   if unary:

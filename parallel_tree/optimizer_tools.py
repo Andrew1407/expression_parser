@@ -4,6 +4,49 @@ from parser.tokens import Token, TokenType, Operator
 from analyzer.tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode
 
 
+def minimize_redundant_nodes(node: Node) -> Node:
+  match node:
+    case BinaryOperatorNode(value=(Token(value=Operator.MINUS.value))) if node.left.value.value == node.right.value.value:
+      return Node(value=Token.of('0', TokenType.CONSTANT, node.value.start))
+    case BinaryOperatorNode() if node.value.value in (Operator.PLUS.value, Operator.MINUS.value) and node.left.value.value == '0':
+      return minimize_redundant_nodes(node.right)
+    case BinaryOperatorNode() if node.value.value in (Operator.PLUS.value, Operator.MINUS.value) and node.right.value.value == '0':
+      return minimize_redundant_nodes(node.left)
+    case BinaryOperatorNode(value=(Token(value=Operator.MULTIPLY.value))) if node.left.value.value == '1':
+      return minimize_redundant_nodes(node.right)
+    case BinaryOperatorNode(value=(Token(value=Operator.MULTIPLY.value))) if node.right.value.value == '1':
+      return minimize_redundant_nodes(node.left)
+    case BinaryOperatorNode(value=(Token(value=Operator.MULTIPLY.value))) if node.left.value.value == '0':
+      return node.left
+    case BinaryOperatorNode(value=(Token(value=Operator.MULTIPLY.value))) if node.right.value.value == '0':
+      return node.right
+    case BinaryOperatorNode(value=(Token(value=Operator.DIVIDE.value))) if node.left.value.value == node.right.value.value:
+      return Node(value=Token.of('1', TokenType.CONSTANT, node.value.start))
+    case BinaryOperatorNode(value=(Token(value=Operator.DIVIDE.value))) if node.right.value.value == '1':
+      return minimize_redundant_nodes(node.left)
+    case BinaryOperatorNode(value=(Token(value=Operator.DIVIDE.value))) if node.left.value.value == '0':
+      return node.left
+    case UnaryOperatorNode() if node.expression.value.value == '0':
+      return node.expression
+    case UnaryOperatorNode():
+      node.expression = minimize_redundant_nodes(node.expression)
+      return node.expression if node.expression.value.value == '0' else node
+    case BinaryOperatorNode():
+      left = node.left.value
+      right = node.right.value
+      node.left = minimize_redundant_nodes(node.left)
+      node.right = minimize_redundant_nodes(node.right)
+      minimized = left != node.left.value or right != node.right.value
+      return minimize_redundant_nodes(node) if minimized else node
+    case FunctionNode():
+      node.args = tuple(minimize_redundant_nodes(arg) for arg in node.args)
+      return node
+    case Node():
+      return node
+    case _:
+      return minimize_redundant_nodes(node)
+
+
 def convert_to_primitive(node: Node):
   match node:
     case BinaryOperatorNode(value=(Token(value=Operator.MINUS.value))) as minus:
