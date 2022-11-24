@@ -18,7 +18,7 @@ def build_parallel_tree(node: Node, convert_to_optimized: bool = True) -> Node:
   tree = optimizer_tools.open_brackets(tree)
   minimize_depth(tree)
   if convert_to_optimized:
-    optimizer_tools.convert_to_optimized(tree)
+    tree = optimizer_tools.convert_to_optimized(tree)
   return tree
 
 

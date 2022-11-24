@@ -71,7 +71,7 @@ class ExpressionParser:
         self.__add_exeption('Invalid symbol operator "{symbol}"', operator)
       case Token() as t if t.type == TokenType.CONSTANT and t.value.strip() == Signature.FLOAT_POINT:
         self.__add_exeption('Invalid symbol "{symbol}"', operator)
-      case Token(type=TokenType.DELIMITER):
+      case Token(type=TokenType.DELIMITER) if not Operator.isunary(operator):
         self.__add_exeption('Invalid symbol "{symbol}"', operator)
       case Token() as t if t.value == '(' and not Operator.isunary(token.value):
         self.__add_exeption('Invalid symbol operator "{symbol}"', operator)
