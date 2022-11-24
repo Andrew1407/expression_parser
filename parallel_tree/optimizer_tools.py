@@ -158,7 +158,7 @@ def convert_to_optimized(node: Node) -> Node:
       node.right = convert_to_optimized(node.right)
       left_minus = isinstance(node.left, UnaryOperatorNode)
       right_minus = isinstance(node.right, UnaryOperatorNode)
-      if left_minus and left_minus:
+      if left_minus and right_minus:
         node.left = node.left.expression
         node.right = node.right.expression
         node = UnaryOperatorNode(
