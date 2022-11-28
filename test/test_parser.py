@@ -1,6 +1,6 @@
 import unittest
-from parser.expression_parser import ExpressionParser
-from parser.tokens import Token, Operator, TokenType, Signature
+from expression_parser.parser.expression_parser import ExpressionParser
+from expression_parser.parser.tokens import Token, Operator, TokenType, Signature
 
 
 class TestExpressionParser(unittest.TestCase):

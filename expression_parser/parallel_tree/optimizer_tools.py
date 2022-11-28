@@ -1,7 +1,7 @@
 from copy import deepcopy
 from types import NoneType
-from parser.tokens import Token, TokenType, Operator
-from analyzer.tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode
+from expression_parser.parser.tokens import Token, TokenType, Operator
+from expression_parser.analyzer.tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode
 
 
 def minimize_redundant_nodes(node: Node) -> Node:
@@ -180,11 +180,11 @@ def convert_to_optimized(node: Node) -> Node:
         node.value.value = Operator.DIVIDE.value
         node.left = node.right
         node.right = left_denominator
-        __remove_redundant_minuses(node)
+        node = __remove_redundant_minuses(node)
       elif not left_denominator and right_denominator:
         node.value.value = Operator.DIVIDE.value
-        node.right = right_denominator
-        __remove_redundant_minuses(node)
+        node.right = convert_to_optimized(right_denominator)
+        node = __remove_redundant_minuses(node)
       elif left_denominator and right_denominator:
         denominator_operator = deepcopy(node.value)
         node.value.value = Operator.DIVIDE.value
@@ -194,7 +194,9 @@ def convert_to_optimized(node: Node) -> Node:
           left=left_denominator,
           right=right_denominator,
         )
-        __remove_redundant_minuses(node.right)
+        node.right = __remove_redundant_minuses(node.right)
+      else:
+        node = __remove_redundant_minuses(node)
   return node
 
 
@@ -206,10 +208,19 @@ def __get_denominator(node: BinaryOperatorNode) -> (Node | NoneType):
   return node.right
 
 
-def __remove_redundant_minuses(node: BinaryOperatorNode):
-  if isinstance(node.left, UnaryOperatorNode) and isinstance(node.right, UnaryOperatorNode):
-    node.right = node.right.expression
+def __remove_redundant_minuses(node: BinaryOperatorNode) -> Node:
+  unary_left = isinstance(node.left, UnaryOperatorNode)
+  unary_right = isinstance(node.right, UnaryOperatorNode)
+  if unary_left:
     node.left = node.left.expression
+  if unary_right:
+    node.right = node.right.expression
+  if unary_left and not unary_right or unary_right and not unary_left:
+    return UnaryOperatorNode(
+      value=Token.of(Operator.MINUS.value, TokenType.OPERATOR, node.value.start),
+      expression=node,
+    )
+  return node
 
 
 def __is_primitive(node: Node) -> bool:

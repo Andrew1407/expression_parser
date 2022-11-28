@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from types import NoneType
-from parser.tokens import Token
+from expression_parser.parser.tokens import Token
 import json
 
 

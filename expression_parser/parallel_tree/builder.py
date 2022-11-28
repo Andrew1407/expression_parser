@@ -1,8 +1,8 @@
 from typing import Callable
 from types import NoneType
 from copy import deepcopy
-from parser.tokens import Token, TokenType, Operator
-from analyzer.tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode
+from expression_parser.parser.tokens import Token, TokenType, Operator
+from expression_parser.analyzer.tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode
 from . import optimizer_tools
 
 
@@ -29,7 +29,7 @@ def minimize_depth(node: Node):
     case BinaryOperatorNode() as binary if binary.value.value in (Operator.PLUS.value, Operator.MULTIPLY.value):
       operator = binary.value.value
       depth_builder = lambda node, depth: get_path_depth(node, depth, operator)
-      balanse_operator(operator, binary, depth_builder)
+      balance_operator(operator, binary, depth_builder)
     case BinaryOperatorNode(value=(Token(value=Operator.POWER.value))) as power:
       minimize_depth(power.left)
       minimize_depth(power.right)
@@ -38,7 +38,7 @@ def minimize_depth(node: Node):
         minimize_depth(expression)
 
 
-def balanse_operator(operator: str, node: BinaryOperatorNode, depth_builder: Callable[[Node, list[Node]], NoneType]):
+def balance_operator(operator: str, node: BinaryOperatorNode, depth_builder: Callable[[Node, list[Node]], NoneType]):
   max_path, min_path = get_leaves_path(node, depth_builder)
   max_len = len(max_path)
   min_len = len(min_path)

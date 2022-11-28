@@ -1,7 +1,7 @@
-from parser.expression_parser import ExpressionParser, ParsingExeprion
-from analyzer.syntax_analyzer import SyntaxAnalyzer, SyntaxAnalysisException
-from parallel_tree.builder import build_parallel_tree
-from tree_output.expression_view import ExpressionView
+from expression_parser.parser.expression_parser import ExpressionParser, ParsingExeprion
+from expression_parser.analyzer.syntax_analyzer import SyntaxAnalyzer, SyntaxAnalysisException
+from expression_parser.parallel_tree.builder import build_parallel_tree
+from expression_parser.tree_output.expression_view import ExpressionView
 
 
 class ConsoleInputClient:

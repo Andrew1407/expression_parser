@@ -1,8 +1,8 @@
 import unittest
-from parser.tokens import Token, TokenType, Signature, Operator
-from parser.expression_parser import ExpressionParser
-from analyzer.syntax_analyzer import SyntaxAnalyzer, SyntaxAnalysisException
-from analyzer.tree_nodes import Node, BinaryOperatorNode, UnaryOperatorNode, FunctionNode
+from expression_parser.parser.tokens import Token, TokenType, Signature, Operator
+from expression_parser.parser.expression_parser import ExpressionParser
+from expression_parser.analyzer.syntax_analyzer import SyntaxAnalyzer, SyntaxAnalysisException
+from expression_parser.analyzer.tree_nodes import Node, BinaryOperatorNode, UnaryOperatorNode, FunctionNode
 
 
 class TestExpressionParser(unittest.TestCase):

@@ -1,8 +1,8 @@
 from typing import Sequence
-from parser.expression_parser import ParsingExeprion
-from parser.tokens import Token
-from analyzer.syntax_analyzer import SyntaxAnalysisException
-from analyzer.tree_nodes import Node
+from expression_parser.parser.expression_parser import ParsingExeprion
+from expression_parser.parser.tokens import Token
+from expression_parser.analyzer.syntax_analyzer import SyntaxAnalysisException
+from expression_parser.analyzer.tree_nodes import Node
 
 
 def log_tokens(tokens: Sequence[Token]):

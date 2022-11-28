@@ -1,11 +1,11 @@
 from graphviz import Graph
 from types import NoneType
 import uuid
-from analyzer.tree_nodes import Node, UnaryOperatorNode, BinaryOperatorNode, FunctionNode
+from expression_parser.analyzer.tree_nodes import Node, UnaryOperatorNode, BinaryOperatorNode, FunctionNode
 
 
-def build_tree_graph(tree: Node, name: str, file_path: str, view: bool = True):
-  graph = Graph(name=name, filename=file_path)
+def build_tree_graph(tree: Node, name: str, file_path: str, file_format: str = 'svg', view: bool = False):
+  graph = Graph(name=name, filename=file_path, format=file_format)
   add_tree_nodes(graph, tree)
   if view: graph.view()
   else: graph.render()

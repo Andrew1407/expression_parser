@@ -1,6 +1,6 @@
 from typing import Iterable
 from types import NoneType
-from parser.tokens import Token, TokenType, Operator, Signature, functions_args
+from expression_parser.parser.tokens import Token, TokenType, Operator, Signature, functions_args
 from .tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode
 
 
