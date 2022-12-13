@@ -2,6 +2,8 @@ from expression_parser.parser.expression_parser import ExpressionParser, Parsing
 from expression_parser.analyzer.syntax_analyzer import SyntaxAnalyzer, SyntaxAnalysisException
 from expression_parser.parallel_tree.builder import build_parallel_tree
 from expression_parser.tree_output.expression_view import ExpressionView
+from expression_parser.equivalent_forms.distributivity import apply_distribution
+from expression_parser.equivalent_forms.commutativity import apply_commutation
 
 
 class ConsoleInputClient:
@@ -26,6 +28,10 @@ class ConsoleInputClient:
     self.__output.show_syntax_tree(syntax_tree)
     parallel_tree = build_parallel_tree(syntax_tree)
     self.__output.show_parallel_tree(parallel_tree)
+    distributive_form = apply_distribution(parallel_tree)
+    commutative_from = apply_commutation(parallel_tree)
+    self.__output.show_distributivity_expression(distributive_form)
+    self.__output.show_commutativity_expression(commutative_from)
 
 
   def __exceptions_wrapper(self, expression: str):

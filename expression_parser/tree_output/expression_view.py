@@ -34,6 +34,18 @@ class ExpressionView:
   def show_parallel_tree(self, tree: Node): ...
 
 
+  @__method_wrapper(console_output.log_commutativity_expression)
+  @__method_wrapper(file_output.write_commutative_form)
+  @__method_wrapper(file_output.show_commutative_form)
+  def show_commutativity_expression(self, tree: Node): ...
+
+
+  @__method_wrapper(console_output.log_distributivity_expression)
+  @__method_wrapper(file_output.write_distributive_form)
+  @__method_wrapper(file_output.show_distributive_form)
+  def show_distributivity_expression(self, tree: Node): ...
+
+
   @__method_wrapper(console_output.log_parsing_exception)
   def show_parsing_exceptions(self, message: str, exceptions: ParsingExeprion): ...
 

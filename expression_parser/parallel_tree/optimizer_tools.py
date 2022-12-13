@@ -116,6 +116,10 @@ def open_brackets(node: Node) -> Node:
     case UnaryOperatorNode():
       expression = node.expression
       node = apply_minus(expression)
+    case BinaryOperatorNode(value=(Token(value=Operator.MINUS.value))):
+      node.value.value = Operator.PLUS.value
+      node.left = open_brackets(node.left)
+      node.right = apply_minus(node.right)
     case BinaryOperatorNode():
       node.left = open_brackets(node.left)
       node.right = open_brackets(node.right)
@@ -128,6 +132,8 @@ def apply_minus(node: Node) -> Node:
   match node:
     case UnaryOperatorNode():
       node = open_brackets(node.expression)
+    case BinaryOperatorNode(value=(Token(value=Operator.MINUS.value))):
+      node.value.value = Operator.PLUS.value
     case BinaryOperatorNode(value=(Token(value=Operator.PLUS.value))):
       node.left = apply_minus(open_brackets(node.left))
       node.right = apply_minus(open_brackets(node.right))

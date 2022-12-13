@@ -3,6 +3,7 @@ from expression_parser.parser.expression_parser import ParsingExeprion
 from expression_parser.parser.tokens import Token
 from expression_parser.analyzer.syntax_analyzer import SyntaxAnalysisException
 from expression_parser.analyzer.tree_nodes import Node
+from .str_converter import stringify_tree
 
 
 def log_tokens(tokens: Sequence[Token]):
@@ -28,3 +29,11 @@ def log_syntax_tree(tree: Node):
 
 def log_parallel_tree(tree: Node):
   print('\nParallel tree:\n', tree.to_json())
+
+
+def log_commutativity_expression(tree: Node):
+  print('\nCommutative form:', stringify_tree(tree))
+
+
+def log_distributivity_expression(tree: Node):
+  print('\nDistributive form:', stringify_tree(tree))
