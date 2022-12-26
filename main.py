@@ -5,6 +5,9 @@ from expression_parser.parallel_tree.optimizer_tools import open_brackets
 from expression_parser.tree_output.expression_view import ExpressionView
 from expression_parser.equivalent_forms.distributivity import apply_distribution
 from expression_parser.equivalent_forms.commutativity import apply_commutation
+from expression_parser.conveyor_simulation.dynamic import DynamicConveyor
+
+from expression_parser.tree_output.str_converter import stringify_tree
 
 
 class ConsoleInputClient:
@@ -21,6 +24,14 @@ class ConsoleInputClient:
     tokens = self.__build_token_list(expression)
     parallel_tree = self.__build_syntax_tree(tokens)
     distributive_form, commutative_form = self.__build_equivalent_forms(parallel_tree)
+
+    layers = 4
+    dc = DynamicConveyor(parallel_tree, layers=layers)
+    simulation_results = dc.simulate()
+    print(f'{simulation_results.sequential=} {simulation_results.dynamic=}')
+    for s in simulation_results.steps:
+      print(f'{s.tacts=}')
+      print([ stringify_tree(sn) if sn else sn for sn in s.layers ])
 
 
   def __exceptions_wrapper(self, expression: str):

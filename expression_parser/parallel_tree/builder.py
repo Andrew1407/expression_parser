@@ -8,6 +8,7 @@ from . import optimizer_tools
 
 def build_parallel_tree(node: Node, convert_to_optimized: bool = True) -> Node:
   tree = deepcopy(node)
+  if not tree.value: return tree
   tree = optimizer_tools.minimize_redundant_nodes(tree)
   optimizer_tools.convert_to_primitive(tree)
   tree, unary = optimizer_tools.get_unary_min_depth(tree)
@@ -67,18 +68,25 @@ def get_path_depth(node: Node, depth: list[Node], operator: str):
     depth.append(node)
     return
   binary: BinaryOperatorNode = node
-  left_plus = binary.left.value.value == operator
+  left_operator = binary.left.value.value == operator
   right_plus = binary.right.value.value == operator
-  if left_plus and right_plus:
+  if left_operator and right_plus:
     depth_warapper = lambda node, depth: get_path_depth(node, depth, operator)
     max_path, _ = get_leaves_path(binary, depth_warapper)
     depth.extend(max_path)
     return
   depth.append(binary)
-  if left_plus and not right_plus:
+  if left_operator and not right_plus:
     get_path_depth(binary.right, depth, operator)
-  if right_plus and not left_plus:
+  elif right_plus and not left_operator:
     get_path_depth(binary.left, depth, operator)
+  elif not (left_operator or right_plus):
+    binary_left = isinstance(binary.left, BinaryOperatorNode)
+    binary_right = isinstance(binary.right, BinaryOperatorNode)
+    if isinstance(binary.left, BinaryOperatorNode) and not isinstance(binary.right, BinaryOperatorNode):
+      depth.append(binary.right)
+    elif isinstance(binary.right, BinaryOperatorNode) and not isinstance(binary.left, BinaryOperatorNode):
+      depth.append(binary.left)
 
 
 def get_leaves_path(node: BinaryOperatorNode, depth_builder: Callable[[Node, list[Node]], NoneType]) -> tuple[list[Node], list[Node]]:

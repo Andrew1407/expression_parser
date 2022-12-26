@@ -4,6 +4,7 @@ from expression_parser.analyzer.tree_nodes import Node, UnaryOperatorNode, Funct
 
 
 def stringify_tree(node: Node) -> str:
+  if not node.value: return str()
   str_value = node.value.value
   match node:
     case BinaryOperatorNode(value=Token(value=Operator.PLUS.value)):

@@ -6,7 +6,7 @@ from expression_parser.analyzer.tree_nodes import Node, UnaryOperatorNode, Binar
 
 def build_tree_graph(tree: Node, name: str, file_path: str, file_format: str = 'svg', view: bool = False):
   graph = Graph(name=name, filename=file_path, format=file_format)
-  add_tree_nodes(graph, tree)
+  if tree.value: add_tree_nodes(graph, tree)
   if view: graph.view()
   else: graph.render()
 
