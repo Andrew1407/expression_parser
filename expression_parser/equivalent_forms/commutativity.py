@@ -1,13 +1,12 @@
+from copy import deepcopy
 from expression_parser.parser.tokens import Operator
 from expression_parser.analyzer.tree_nodes import Node, BinaryOperatorNode, UnaryOperatorNode, FunctionNode
-from expression_parser.parallel_tree.optimizer_tools import open_brackets
-from .utils import apply_minus_copy_wrapper
 
 
-@apply_minus_copy_wrapper
 def apply_commutation(node: Node) -> Node:
-  swap_nodes(node)
-  return node
+  tree = deepcopy(node)
+  swap_nodes(tree)
+  return tree
 
 
 def swap_nodes(node: Node):

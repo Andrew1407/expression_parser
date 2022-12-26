@@ -1,12 +1,11 @@
+from copy import deepcopy
 from expression_parser.parser.tokens import Token, Operator, TokenType
 from expression_parser.analyzer.tree_nodes import Node, BinaryOperatorNode, UnaryOperatorNode, FunctionNode
-from expression_parser.parallel_tree.optimizer_tools import open_brackets
-from .utils import apply_minus_copy_wrapper
 
 
-@apply_minus_copy_wrapper
 def apply_distribution(node: Node) -> Node:
-  return apply_operator(node)
+  tree = deepcopy(node)
+  return apply_operator(tree)
 
 
 def apply_operator(node: Node) -> Node:
