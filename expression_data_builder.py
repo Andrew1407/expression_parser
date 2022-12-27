@@ -51,7 +51,8 @@ class ExpressionDataBuilder:
     commutativity_forms = tuple(map(build_parallel_tree, generate_commutativity_forms(tree)))
     self.__output.log_distributivity_forms(distributivity_forms, list_limit)
     self.__output.log_commutativity_forms(commutativity_forms, list_limit)
-    return distributivity_forms, commutativity_forms
+    open_brackets_tuple = lambda forms: tuple(open_brackets(n) for n in forms)
+    return open_brackets_tuple(distributivity_forms), open_brackets_tuple(commutativity_forms)
 
 
   def build_conveyor_simulations(self, default: Node, distributive: tuple[Node], commutative: tuple[Node]):

@@ -49,11 +49,12 @@ def log_efficiency_table(expressions: Sequence[tuple[Node, SimulationData]], fac
   ordered = sorted(expressions, key=lambda t: getattr(t[1], factor))
   print('\nEfficiency table for expression forms:')
   logged = list()
-  for i, val in enumerate(ordered):
-    key, expr = val
+  i = 1
+  for key, expr in ordered:
     stringified = stringify_tree(key)
     if stringified in logged: continue
-    print('%d) %s: %s' % (i+1, stringified, expr.format_params(round_digits=ROUND_PARAM_DIGITS)))
+    print('%d) %s: %s' % (i, stringified, expr.format_params(round_digits=ROUND_PARAM_DIGITS)))
+    i += 1
     logged.append(stringified)
 
 
