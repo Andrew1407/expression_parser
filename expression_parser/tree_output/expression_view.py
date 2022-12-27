@@ -35,16 +35,12 @@ class ExpressionView:
   def show_parallel_tree(self, tree: Node): ...
 
 
-  @__method_wrapper(console_output.log_commutativity_expression)
-  @__method_wrapper(file_output.write_commutative_form)
-  @__method_wrapper(file_output.show_commutative_form)
-  def show_commutativity_expression(self, tree: Node): ...
+  @__method_wrapper(console_output.log_commutativity_forms)
+  def log_commutativity_forms(self, expressions: Sequence[Node], take: int = 0): ...
 
 
-  @__method_wrapper(console_output.log_distributivity_expression)
-  @__method_wrapper(file_output.write_distributive_form)
-  @__method_wrapper(file_output.show_distributive_form)
-  def show_distributivity_expression(self, tree: Node): ...
+  @__method_wrapper(console_output.log_distributivity_forms)
+  def log_distributivity_forms(self, expressions: Sequence[Node], take: int = 0): ...
 
 
   @__method_wrapper(console_output.log_parsing_exception)
@@ -60,12 +56,12 @@ class ExpressionView:
 
 
   @__method_wrapper(console_output.log_commutative_form_conveyor_data)
-  def log_commutative_form_conveyor_data(self, data: SimulationData): ...
+  def log_commutative_form_conveyor_data(self, tree: Node, data: SimulationData): ...
 
 
   @__method_wrapper(console_output.log_distributive_conveyor_data)
-  def log_distributive_conveyor_data(self, data: SimulationData): ...
+  def log_distributive_conveyor_data(self, tree: Node, data: SimulationData): ...
 
 
   @__method_wrapper(console_output.log_efficiency_table)
-  def log_efficiency_table(self, data: SimulationData, factor: str = 'efficiency'): ...
+  def log_efficiency_table(self, expressions: Sequence[tuple[Node, SimulationData]], factor: str = 'efficiency'): ...

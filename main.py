@@ -15,8 +15,8 @@ class ConsoleInputClient:
   def __parse_expression(self, expression: str):
     tokens = self.__builder.build_token_list(expression)
     tree = self.__builder.build_syntax_tree(tokens)
-    distributive_form, commutative_form = self.__builder.build_equivalent_forms(tree)
-    self.__builder.build_conveyor_simulations(tree, distributive_form, commutative_form)
+    distributive_forms, commutative_forms = self.__builder.build_equivalent_forms(tree)
+    self.__builder.build_conveyor_simulations(tree, distributive_forms, commutative_forms)
 
   
 if __name__ == '__main__':

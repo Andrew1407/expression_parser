@@ -107,3 +107,73 @@ def set_division_node(node: Node, division: Node) -> Node:
         left=node,
         right=division,
       )
+
+def generate_distributivity_forms(node: Node) -> tuple[Node]:
+  forms: list[Node] = list()
+  match node:
+    case BinaryOperatorNode(value=Token(value=Operator.MULTIPLY.value)):
+      forms.append(deepcopy(node))
+      forms.extend(get_multiplications(node))
+    case BinaryOperatorNode(value=Token(value=Operator.DIVIDE.value)):
+      forms.append(deepcopy(node))
+      forms.extend(get_divisions(node))
+    case BinaryOperatorNode():
+      left_forms = generate_distributivity_forms(node.left)
+      right_forms = generate_distributivity_forms(node.right)
+      for left in left_forms:
+        for right in right_forms:
+          clone = deepcopy(node)
+          clone.left = left
+          clone.right = right
+          forms.append(clone)
+    case Node():
+      forms.append(node)
+  return tuple(forms)
+
+
+def get_multiplications(node: BinaryOperatorNode) -> tuple[Node]:
+  forms: list[Node] = list()
+  left_forms = generate_distributivity_forms(node.left)
+  right_forms = generate_distributivity_forms(node.right)
+  for left_form in left_forms:
+    for right_form in right_forms:
+      nodes_left: list[Node] = list()
+      nodes_right: list[Node] = list()
+      search_plus_nodes(left_form, nodes_left)
+      search_plus_nodes(right_form, nodes_right)
+      if len(nodes_left) == 1 and len(nodes_right) == 1:
+        continue
+      joined: list[Node] = list()
+      for nl in nodes_left:
+        for nr in nodes_right:
+          node = BinaryOperatorNode(
+            value=Token.of(Operator.MULTIPLY.value, TokenType.OPERATOR, nl.value.start),
+            left=nl,
+            right=nr,
+          )
+          joined.append(node)
+      joined = join_nodes_with_operator(joined, Operator.PLUS.value)
+      forms.append(joined)
+  return tuple(forms)
+
+
+def get_divisions(node: BinaryOperatorNode) -> Node:
+  forms: list[Node] = list()
+  upper_nodes: list[Node] = list()
+  lower_nodes: list[Node] = list()
+  current_node = node
+  to_upper = True
+  while True:
+    nodes = upper_nodes if to_upper else lower_nodes
+    if current_node.value.value != Operator.DIVIDE.value:
+      nodes.append(current_node)
+      break
+    nodes.append(current_node.left)
+    current_node = current_node.right
+    to_upper = not to_upper
+  uppers = generate_distributivity_forms(join_nodes_with_operator(upper_nodes, Operator.MULTIPLY.value))
+  lowers = generate_distributivity_forms(join_nodes_with_operator(lower_nodes, Operator.MULTIPLY.value))
+  for upper in uppers:
+    for lower in lowers:
+      forms.append(set_division_node(upper, lower))
+  return tuple(forms)

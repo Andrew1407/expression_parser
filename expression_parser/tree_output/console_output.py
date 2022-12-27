@@ -35,20 +35,26 @@ def log_parallel_tree(tree: Node):
   print('\nParallel tree:\n', tree.to_json())
 
 
-def log_commutativity_expression(tree: Node):
-  print('\nCommutative form:', stringify_tree(tree))
+def log_commutativity_forms(expressions: Sequence[Node], take: int = 0):
+  print('\nCommutative forms:')
+  show_expressions_list(expressions, take)
 
 
-def log_distributivity_expression(tree: Node):
-  print('\nDistributive form:', stringify_tree(tree))
+def log_distributivity_forms(expressions: Sequence[Node], take: int = 0):
+  print('\nDistributive forms:')
+  show_expressions_list(expressions, take)
 
 
-def log_efficiency_table(expressions: dict[str, SimulationData], factor: str = 'efficiency'):
-  ordered = {k: v for k, v in sorted(expressions.items(), key=lambda t: getattr(t[1], factor))}
-  print('\nEfficiency table for expression forms')
-  for i, val in enumerate(ordered.items()):
+def log_efficiency_table(expressions: Sequence[tuple[Node, SimulationData]], factor: str = 'efficiency'):
+  ordered = sorted(expressions, key=lambda t: getattr(t[1], factor))
+  print('\nEfficiency table for expression forms:')
+  logged = list()
+  for i, val in enumerate(ordered):
     key, expr = val
-    print('%d) %s: %s' % (i+1, key, expr.format_params(round_digits=ROUND_PARAM_DIGITS)))
+    stringified = stringify_tree(key)
+    if stringified in logged: continue
+    print('%d) %s: %s' % (i+1, stringified, expr.format_params(round_digits=ROUND_PARAM_DIGITS)))
+    logged.append(stringified)
 
 
 def log_default_conveyor_data(data: SimulationData):
@@ -56,14 +62,25 @@ def log_default_conveyor_data(data: SimulationData):
   log_conveyor_data(data)
 
 
-def log_commutative_form_conveyor_data(data: SimulationData):
-  print('\nConveyor simulation for commutative form:\n')
+def log_commutative_form_conveyor_data(tree: Node, data: SimulationData):
+  print('\nConveyor simulation for commutative form:')
+  print(stringify_tree(tree), '\n')
   log_conveyor_data(data)
 
 
-def log_distributive_conveyor_data(data: SimulationData):
-  print('\nConveyor simulation for distributive form:\n')
+def log_distributive_conveyor_data(tree: Node, data: SimulationData):
+  print('\nConveyor simulation for distributive form:')
+  print(stringify_tree(tree), '\n')
   log_conveyor_data(data)
+
+
+def show_expressions_list(expressions: Sequence[Node], take: int):
+  shorten = take < len(expressions)
+  if shorten:
+    expressions = expressions[:take]
+  for tree in expressions:
+    print(stringify_tree(tree))
+  if shorten: print('...')
 
 
 def log_conveyor_data(data: SimulationData):

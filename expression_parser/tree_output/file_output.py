@@ -33,17 +33,6 @@ def write_parallel_tree(tree: Node):
   with open(PARALLEL_TREE_PATH + '.json', 'w') as f:
     f.write(tree.to_json())
 
-@dist_check
-def write_distributive_form(tree: Node):
-  with open(DISTRIBUTIVE_FORM_PATH + '.json', 'w') as f:
-    f.write(tree.to_json())
-
-
-@dist_check
-def write_commutative_form(tree: Node):
-  with open(COMMUTATIVE_FORM_PATH + '.json', 'w') as f:
-    f.write(tree.to_json())
-
 
 @dist_check
 def write_tokens(tokens: Sequence[Token]):
@@ -60,12 +49,3 @@ def show_syntax_tree(tree: Node):
 @dist_check
 def show_parallel_tree(tree: Node):
   build_tree_graph(tree, 'parallel_tree', PARALLEL_TREE_PATH)
-
-
-@dist_check
-def show_distributive_form(tree: Node):
-  build_tree_graph(tree, 'distributive', DISTRIBUTIVE_FORM_PATH)
-
-@dist_check
-def show_commutative_form(tree: Node):
-  build_tree_graph(tree, 'commutative', COMMUTATIVE_FORM_PATH)
