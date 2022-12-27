@@ -2,8 +2,12 @@ from typing import Sequence
 from expression_parser.parser.expression_parser import ParsingExeprion
 from expression_parser.parser.tokens import Token
 from expression_parser.analyzer.syntax_analyzer import SyntaxAnalysisException
-from expression_parser.analyzer.tree_nodes import Node
+from expression_parser.analyzer.tree_nodes import Node, BinaryOperatorNode, FunctionNode
+from expression_parser.conveyor_simulation.containers import SimulationData
 from .str_converter import stringify_tree
+
+
+ROUND_PARAM_DIGITS = 4
 
 
 def log_tokens(tokens: Sequence[Token]):
@@ -37,3 +41,70 @@ def log_commutativity_expression(tree: Node):
 
 def log_distributivity_expression(tree: Node):
   print('\nDistributive form:', stringify_tree(tree))
+
+
+def log_efficiency_table(expressions: dict[str, SimulationData], factor: str = 'efficiency'):
+  ordered = {k: v for k, v in sorted(expressions.items(), key=lambda t: getattr(t[1], factor))}
+  print('\nEfficiency table for expression forms')
+  for i, val in enumerate(ordered.items()):
+    key, expr = val
+    print('%d) %s: %s' % (i+1, key, expr.format_params(round_digits=ROUND_PARAM_DIGITS)))
+
+
+def log_default_conveyor_data(data: SimulationData):
+  print('\nConveyor simulation for default expression:\n')
+  log_conveyor_data(data)
+
+
+def log_commutative_form_conveyor_data(data: SimulationData):
+  print('\nConveyor simulation for commutative form:\n')
+  log_conveyor_data(data)
+
+
+def log_distributive_conveyor_data(data: SimulationData):
+  print('\nConveyor simulation for distributive form:\n')
+  log_conveyor_data(data)
+
+
+def log_conveyor_data(data: SimulationData):
+  formulas: dict[str, Node] = dict()
+  node_number = 1
+  for i, step in enumerate(data.steps):
+    print(f'Step {i+1} - {step.tacts} tact(s):')
+    entries: list[str] = list()
+    for e in step.layers:
+      if e is None:
+        entries.append('...')
+        continue
+      label = __find_formula(formulas, e)
+      if label:
+        entries.append(label)
+        continue
+      label = '0_%d' % node_number
+      node_number += 1
+      formula = str()
+      match e:
+        case BinaryOperatorNode():
+          left_label = __find_formula(formulas, e.left)
+          left = left_label if left_label else stringify_tree(e.left)
+          right_label = __find_formula(formulas, e.right)
+          right = right_label if right_label else stringify_tree(e.right)
+          formula = ' '.join((left, e.value.value, right))
+        case FunctionNode():
+          args = list()
+          for arg in e.args:
+            arg_label = __find_formula(formulas, arg)
+            found = arg_label if arg_label else stringify_tree(arg)
+            args.append(found)
+          args_str = ', '.join(args)
+          formula = f'{e.value.value}({args_str})'
+      formulas[label] = e
+      entries.append(f'{label} = {formula}')
+    print(entries)
+  print('\n' + data.format_params(round_digits=ROUND_PARAM_DIGITS))
+
+
+def __find_formula(formulas: dict[str, Node], node: Node) -> str:
+  for key in formulas:
+    if formulas[key] is node: return key
+  return str()

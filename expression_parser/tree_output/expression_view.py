@@ -1,8 +1,9 @@
-from typing import Sequence, Self
+from typing import Sequence
 from expression_parser.parser.expression_parser import ParsingExeprion
 from expression_parser.parser.tokens import Token
 from expression_parser.analyzer.syntax_analyzer import SyntaxAnalysisException
 from expression_parser.analyzer.tree_nodes import Node
+from expression_parser.conveyor_simulation.containers import SimulationData
 from . import console_output, file_output
 
 
@@ -52,3 +53,19 @@ class ExpressionView:
 
   @__method_wrapper(console_output.log_syntax_exception)
   def show_syntax_exception(self, exception: SyntaxAnalysisException): ...
+
+
+  @__method_wrapper(console_output.log_default_conveyor_data)
+  def log_dafault_conveyor_data(self, data: SimulationData): ...
+
+
+  @__method_wrapper(console_output.log_commutative_form_conveyor_data)
+  def log_commutative_form_conveyor_data(self, data: SimulationData): ...
+
+
+  @__method_wrapper(console_output.log_distributive_conveyor_data)
+  def log_distributive_conveyor_data(self, data: SimulationData): ...
+
+
+  @__method_wrapper(console_output.log_efficiency_table)
+  def log_efficiency_table(self, data: SimulationData, factor: str = 'efficiency'): ...

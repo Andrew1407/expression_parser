@@ -2,12 +2,14 @@ from types import NoneType
 from expression_parser.parser.tokens import Token, Operator
 from expression_parser.analyzer.tree_nodes import Node, BinaryOperatorNode, FunctionNode
 from .utils import flat_operations, take_flat, take_ready, take_congenerical
-from .containers import ConveyorStep, OperationDuration, SimulationData
-
-from expression_parser.tree_output.str_converter import stringify_tree
+from .containers import ConveyorStep, OperationDuration, SimulationData, LAYERS_COUNT
 
 
 class DynamicConveyor:
+  @staticmethod
+  def of(expression: Node):
+    return DynamicConveyor(expression, LAYERS_COUNT)
+
   def __init__(self, expression: Node, layers: int = 1):
     self.__steps: list[ConveyorStep] = list()
     self.__layers: int = layers
@@ -32,7 +34,6 @@ class DynamicConveyor:
         continue
       previous_layers = self.__steps[-1].layers
       fulfilled = previous_layers[-1]
-      # print(f'{previous_layers=}')
       if fulfilled:
         self.__operations_fulfileld.append(fulfilled)
       node = self.__take()
@@ -45,8 +46,11 @@ class DynamicConveyor:
 
   def __generate_results(self) -> SimulationData:
     result = SimulationData(steps=tuple(self.__steps))
+    result.layers = self.__layers
     result.sequential = self.__layers * sum(self.__get_tacts(n) for n in self.__operations_fulfileld)
     result.dynamic = sum(s.tacts for s in self.__steps)
+    result.acceleration = result.sequential / result.dynamic if result.dynamic else 1
+    result.efficiency = result.acceleration / self.__layers
     return result
 
 
@@ -56,7 +60,6 @@ class DynamicConveyor:
     found = take_ready(self.__operations_left, self.__operations_fulfileld)
     if found: return found
     found = take_congenerical(self.__operations_left, self.__steps[-1].layers)
-    if found: print(len(self.__steps) + 1, stringify_tree(found))
     return found
     
 

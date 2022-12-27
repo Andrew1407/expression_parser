@@ -17,9 +17,9 @@ def flat_operations(node: Node, container: list[Node]):
 def is_nested(node: Node) -> bool:
   match node:
     case BinaryOperatorNode():
-      return any(isinstance(n, BinaryOperatorNode) or (isinstance(n, FunctionNode) and n.args > 0) for n in (node.left, node.right))
+      return any(isinstance(n, BinaryOperatorNode) or (isinstance(n, FunctionNode) and len(n.args) > 0) for n in (node.left, node.right))
     case FunctionNode():
-      return node.args > 0
+      return len(node.args) > 0
     case _:
       return False
 
@@ -34,7 +34,6 @@ def take_flat(container: list[Node]) -> (Node | NoneType):
 
 def take_ready(left: list[Node], fulfilled: list[Node]) -> (Node | NoneType):
   is_fulfilled = lambda n: any(n is f for f in fulfilled)
-  # print(f'{left=}')
   for i, n in enumerate(left):
     children = None
     match n:
@@ -57,7 +56,6 @@ def take_congenerical(left: list[Node], previous_layers: list[Node | NoneType]) 
     children = tuple(p for p in previous_layers if n.left is p or n.right is p)
     fit = children and all(c.value.value == n.value.value for c in children)
     if not fit: continue
-    print(f'{fit} {previous_layers=}')
     left.pop(i)
     return n
   return None

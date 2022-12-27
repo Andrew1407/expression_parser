@@ -69,24 +69,31 @@ def get_path_depth(node: Node, depth: list[Node], operator: str):
     return
   binary: BinaryOperatorNode = node
   left_operator = binary.left.value.value == operator
-  right_plus = binary.right.value.value == operator
-  if left_operator and right_plus:
+  right_operator = binary.right.value.value == operator
+  if left_operator and right_operator:
     depth_warapper = lambda node, depth: get_path_depth(node, depth, operator)
     max_path, _ = get_leaves_path(binary, depth_warapper)
     depth.extend(max_path)
     return
   depth.append(binary)
-  if left_operator and not right_plus:
+  if left_operator and not right_operator:
     get_path_depth(binary.right, depth, operator)
-  elif right_plus and not left_operator:
+  elif right_operator and not left_operator:
     get_path_depth(binary.left, depth, operator)
-  elif not (left_operator or right_plus):
+  elif not (left_operator or right_operator):
     binary_left = isinstance(binary.left, BinaryOperatorNode)
     binary_right = isinstance(binary.right, BinaryOperatorNode)
-    if isinstance(binary.left, BinaryOperatorNode) and not isinstance(binary.right, BinaryOperatorNode):
+    if binary_left and not binary_right:
       depth.append(binary.right)
-    elif isinstance(binary.right, BinaryOperatorNode) and not isinstance(binary.left, BinaryOperatorNode):
+    elif binary_right and not binary_left:
       depth.append(binary.left)
+    elif binary_left and binary_right:
+      left_warapper = lambda node, depth: get_path_depth(node, depth, binary.left.value.value)
+      max_left, _ = get_leaves_path(binary.left, left_warapper)
+      right_warapper = lambda node, depth: get_path_depth(node, depth, binary.right.value.value)
+      max_right, _ = get_leaves_path(binary.right, right_warapper)
+      shortest = max_left[0] if len(max_left) > len(max_right) else max_right[0]
+      depth.append(shortest)
 
 
 def get_leaves_path(node: BinaryOperatorNode, depth_builder: Callable[[Node, list[Node]], NoneType]) -> tuple[list[Node], list[Node]]:

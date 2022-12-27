@@ -19,6 +19,6 @@ def swap_nodes(node: Node):
         node.left = node.right
         node.right = left
     case FunctionNode():
-      node.args = tuple(swap_nodes(arg) for arg in node.args)
+      for arg in node.args: swap_nodes(arg)
     case UnaryOperatorNode():
       swap_nodes(node.expression)
