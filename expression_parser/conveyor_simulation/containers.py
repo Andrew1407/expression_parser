@@ -11,8 +11,8 @@ class OperationDuration:
   MIN: float = 1
   MUL: float = 2
   DIV: float = 5
-  POW: float = 4
-  FUNCTION: float = 5
+  POW: float = 7
+  FUNCTION: float = 10
 
 
 @dataclass
