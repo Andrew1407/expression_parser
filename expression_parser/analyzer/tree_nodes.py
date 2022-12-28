@@ -4,6 +4,7 @@ from expression_parser.parser.tokens import Token
 import json
 
 
+
 @dataclass
 class Node:
   value: Token
@@ -12,6 +13,8 @@ class Node:
     parse = lambda o: dict(type=o.__class__.__name__) | o.__dict__
     return json.dumps(parse(self), default=parse, indent=2)
 
+
+NodesTuple = tuple[Node, ...]
 
 @dataclass
 class UnaryOperatorNode(Node):
@@ -26,4 +29,6 @@ class BinaryOperatorNode(Node):
 
 @dataclass
 class FunctionNode(Node):
-  args: tuple[Node]
+  args: NodesTuple
+
+

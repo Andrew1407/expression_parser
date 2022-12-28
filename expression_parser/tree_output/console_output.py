@@ -48,14 +48,10 @@ def log_distributivity_forms(expressions: Sequence[Node], take: int = 0):
 def log_efficiency_table(expressions: Sequence[tuple[Node, SimulationData]], factor: str = 'efficiency'):
   ordered = sorted(expressions, key=lambda t: getattr(t[1], factor))
   print('\nEfficiency table for expression forms:')
-  logged = list()
-  i = 1
-  for key, expr in ordered:
+  for i, val in enumerate(ordered):
+    key, expr = val
     stringified = stringify_tree(key)
-    if stringified in logged: continue
-    print('%d) %s: %s' % (i, stringified, expr.format_params(round_digits=ROUND_PARAM_DIGITS)))
-    i += 1
-    logged.append(stringified)
+    print('%d) %s: %s' % (i+1, stringified, expr.format_params(round_digits=ROUND_PARAM_DIGITS)))
 
 
 def log_default_conveyor_data(data: SimulationData):

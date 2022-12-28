@@ -1,32 +1,28 @@
 from copy import deepcopy
 from expression_parser.parser.tokens import Token, Operator, TokenType
-from expression_parser.analyzer.tree_nodes import Node, BinaryOperatorNode
+from expression_parser.analyzer.tree_nodes import Node, BinaryOperatorNode, UnaryOperatorNode, FunctionNode, NodesTuple
+from .utils import get_binary_forms_collection
+from .utils import get_binary_forms_collection, get_function_forms_collection, get_unary_forms_collection
 
 
-def generate_distributivity_forms(node: Node) -> tuple[Node]:
-  forms: list[Node] = list()
+def generate_distributivity_forms(node: Node) -> NodesTuple:
   match node:
     case BinaryOperatorNode(value=Token(value=Operator.MULTIPLY.value)):
-      forms.append(deepcopy(node))
-      forms.extend(get_multiplications(node))
+      return (deepcopy(node), *get_multiplications(node))
     case BinaryOperatorNode(value=Token(value=Operator.DIVIDE.value)):
-      forms.append(deepcopy(node))
-      forms.extend(get_divisions(node))
+      return (deepcopy(node), *get_divisions(node))
     case BinaryOperatorNode():
-      left_forms = generate_distributivity_forms(node.left)
-      right_forms = generate_distributivity_forms(node.right)
-      for left in left_forms:
-        for right in right_forms:
-          clone = deepcopy(node)
-          clone.left = left
-          clone.right = right
-          forms.append(clone)
-    case Node():
-      forms.append(node)
-  return tuple(forms)
+      variants = get_binary_forms_collection(node, generate_distributivity_forms)
+      return variants
+    case FunctionNode():
+      return get_function_forms_collection(node, generate_distributivity_forms)
+    case UnaryOperatorNode():
+      return get_unary_forms_collection(node, generate_distributivity_forms)
+    case _:
+      return (node,)
 
 
-def get_multiplications(node: BinaryOperatorNode) -> tuple[Node]:
+def get_multiplications(node: BinaryOperatorNode) -> NodesTuple:
   forms: list[Node] = list()
   left_forms = generate_distributivity_forms(node.left)
   right_forms = generate_distributivity_forms(node.right)

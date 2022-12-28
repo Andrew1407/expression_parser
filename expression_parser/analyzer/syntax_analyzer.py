@@ -1,7 +1,7 @@
 from typing import Iterable
 from types import NoneType
 from expression_parser.parser.tokens import Token, TokenType, Operator, Signature, functions_args
-from .tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode
+from .tree_nodes import Node, FunctionNode, UnaryOperatorNode, BinaryOperatorNode, NodesTuple
 
 
 class SyntaxAnalysisException(Exception):
@@ -100,7 +100,7 @@ class SyntaxAnalyzer:
 
   def __build_function_node(self, fn: Token) -> Node:
     token = self.__get_current_token(next=True)
-    args: tuple[Node] = tuple()
+    args: NodesTuple = tuple()
     if not (token and token.value == Signature.LEFT_PARENTHESIS):
       raise SyntaxAnalysisException('Function call (left parenthesis) expected for: "{token}"', fn)
     if not (fn and fn.type == TokenType.FUNCTION):
@@ -115,7 +115,7 @@ class SyntaxAnalyzer:
     return FunctionNode(value=fn, args=args)
 
 
-  def __get_function_args(self) -> tuple[Node]:
+  def __get_function_args(self) -> NodesTuple:
     token: (Token | NoneType) = None
     expression: (Node | NoneType) = None
     args: list[Node] = list()

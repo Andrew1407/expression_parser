@@ -21,11 +21,11 @@ class ExpressionParser:
     self.__define_functions()
 
   
-  def get_tokens(self) -> tuple[Token]:
+  def get_tokens(self) -> tuple[Token, ...]:
     return tuple(self.__tokens)
 
   
-  def get_exceptions(self) -> tuple[ParsingExeprion]:
+  def get_exceptions(self) -> tuple[ParsingExeprion, ...]:
     return tuple(self.__exceptions)
 
   
