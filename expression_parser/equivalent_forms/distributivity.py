@@ -1,7 +1,6 @@
 from copy import deepcopy
 from expression_parser.parser.tokens import Token, Operator, TokenType
 from expression_parser.analyzer.tree_nodes import Node, BinaryOperatorNode, UnaryOperatorNode, FunctionNode, NodesTuple
-from .utils import get_binary_forms_collection
 from .utils import get_binary_forms_collection, get_function_forms_collection, get_unary_forms_collection
 
 
@@ -23,34 +22,11 @@ def generate_distributivity_forms(node: Node) -> NodesTuple:
 
 
 def get_multiplications(node: BinaryOperatorNode) -> NodesTuple:
-  forms: list[Node] = list()
   left_forms = get_plus_nodes_combinations(node.left)
   right_forms = get_plus_nodes_combinations(node.right)
-  for left_form in left_forms:
-    for right_form in right_forms:
-      # nodes_left: list[Node] = list()
-      # nodes_right: list[Node] = list()
-      # search_plus_nodes(left_form, nodes_left)
-      # search_plus_nodes(right_form, nodes_right)
-      # if len(nodes_left) == 1 and len(nodes_right) == 1:
-      #   continue
-
-      # combinations_left
-      pass
-      # joined: list[Node] = list()
-      # for nl in left_form:
-      #   for nr in right_form:
-      #     # generate_distributivity_forms(nl)
-      #     # generate_distributivity_forms(nr)
-      #     node = BinaryOperatorNode(
-      #       value=Token.of(Operator.MULTIPLY.value, TokenType.OPERATOR, nl.value.start),
-      #       left=nl,
-      #       right=nr,
-      #     )
-      #     generate_distributivity_forms(node)
-      #     joined.append(node)
-      # joined = join_nodes_with_operator(joined, Operator.PLUS.value)
-      # forms.append(joined)
+  left_combinations = make_multiplication_combinations(left_forms, right_forms)
+  right_combinations = make_multiplication_combinations(right_forms, left_forms, swapped=True)
+  forms = join_combinations(left_combinations + right_combinations)
   return tuple(forms)
 
 
@@ -71,7 +47,6 @@ def get_plus_nodes_combinations(node: Node) -> list[list[Node]]:
     case _:
       combinations.extend([[deepcopy(n)] for n in generate_distributivity_forms(node)])
   return combinations
-
       
 
 def get_divisions(node: BinaryOperatorNode) -> Node:
@@ -117,15 +92,6 @@ def join_nodes_with_operator(nodes: list[Node], operator: str) -> Node:
   return main_node
 
 
-def search_plus_nodes(node: Node, nodes: list[Node]):
-  match node:
-    case BinaryOperatorNode(value=Token(value=Operator.PLUS.value)):
-      search_plus_nodes(node.left, nodes)
-      search_plus_nodes(node.right, nodes)
-    case _:
-      nodes.append(node)
-
-
 def set_division_node(node: Node, division: Node) -> Node:
   match node:
     case BinaryOperatorNode(value=Token(value=Operator.PLUS.value)):
@@ -140,13 +106,14 @@ def set_division_node(node: Node, division: Node) -> Node:
       )
 
 
-def make_multiplication_combinations(node_groups: list[list[Node]], target_groups: list[list[Node]], swapped: bool = False) -> list[list[list[Node]]]:
-  combinations: list[list[list[Node]]] = list()
+def make_multiplication_combinations(node_groups: list[list[Node]], target_groups: list[list[Node]], swapped: bool = False) -> list[list[list[list[Node]]]]:
+  combinations: list[list[list[list[Node]]]] = list()
   for nodes in node_groups:
-    group: list[list[Node]] = list()
+    group: list[list[list[Node]]] = list()
     for node in nodes:
-      combined: list[Node] = list()
+      combined: list[list[Node]] = list()
       for targets in target_groups:
+        multiplied: list[node] = list()
         for target in targets:
           bound = BinaryOperatorNode(
             value=Token.of(Operator.MULTIPLY.value, TokenType.OPERATOR),
@@ -154,23 +121,26 @@ def make_multiplication_combinations(node_groups: list[list[Node]], target_group
             right=deepcopy(node if swapped else target),
           )
           bound.value.start = bound.left.value.start
-          combined.append(bound)
+          multiplied.append(bound)
+        combined.append(multiplied)
       group.append(combined)
     combinations.append(group)
   return combinations
 
 
-def join_combinations(combinations: list[list[list[Node]]]):
-  joined = list()
+def join_combinations(combinations: list[list[list[list[Node]]]]) -> list[Node]:
+  joined_nodes: list[Node] = list()
   for group in combinations:
     variants: list[list[Node]] = list()
-    for form in group:
+    for forms in group:
       if not variants:
-        variants.extend([deepcopy(arg)] for arg in form)
+        variants.extend(deepcopy(f) for f in forms)
         continue
       combinations_extended = list()
-      for arg in form:
+      for form in forms:
         for combination in deepcopy(variants):
-          combination.append(arg)
+          combination.extend(deepcopy(f) for f in form)
           combinations_extended.append(combination)
       variants = combinations_extended
+    joined_nodes.extend(join_nodes_with_operator(v, Operator.PLUS.value) for v in variants)
+  return joined_nodes

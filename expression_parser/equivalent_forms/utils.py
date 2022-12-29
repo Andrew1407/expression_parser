@@ -1,6 +1,5 @@
 from typing import Callable
 from copy import deepcopy
-from expression_parser.parser.tokens import Token, Operator, TokenType
 from expression_parser.analyzer.tree_nodes import Node, BinaryOperatorNode, UnaryOperatorNode, FunctionNode,  NodesTuple
 
 

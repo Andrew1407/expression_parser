@@ -47,9 +47,9 @@ class ExpressionDataBuilder:
   
 
   def build_equivalent_forms(self, tree: Node) -> tuple[NodesTuple, NodesTuple]:
-    list_limit = 500
-    distributivity_forms = tuple(map(build_parallel_tree, generate_distributivity_forms(tree)))
-    commutativity_forms = tuple(map(build_parallel_tree, generate_commutativity_forms(tree)))
+    list_limit = 5
+    distributivity_forms = self.__get_filtered_equivalent_form(tree, generate_distributivity_forms)
+    commutativity_forms = self.__get_filtered_equivalent_form(tree, generate_commutativity_forms)
     self.__output.log_distributivity_forms(distributivity_forms, list_limit)
     self.__output.log_commutativity_forms(commutativity_forms, list_limit)
     open_brackets_tuple = lambda forms: tuple(open_brackets(n) for n in forms)
@@ -75,3 +75,9 @@ class ExpressionDataBuilder:
     forms = ((n, DynamicConveyor.of(n).simulate()) for n in expressions)
     return tuple(f for f in forms if stringify_tree(f[0]) != deafult)
 
+
+  def __get_filtered_equivalent_form(self, tree: Node, generator: Callable[[Node], NodesTuple]) -> NodesTuple:
+    default = stringify_tree(tree)
+    forms = ((stringify_tree(n), n) for n in map(build_parallel_tree, generator(tree)))
+    unique = {k: v for k, v in forms if k != default}
+    return tuple(unique.values())
