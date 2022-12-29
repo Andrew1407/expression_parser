@@ -47,7 +47,7 @@ class ExpressionDataBuilder:
   
 
   def build_equivalent_forms(self, tree: Node) -> tuple[NodesTuple, NodesTuple]:
-    list_limit = 5
+    list_limit = 500
     distributivity_forms = tuple(map(build_parallel_tree, generate_distributivity_forms(tree)))
     commutativity_forms = tuple(map(build_parallel_tree, generate_commutativity_forms(tree)))
     self.__output.log_distributivity_forms(distributivity_forms, list_limit)
